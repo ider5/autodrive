@@ -11,6 +11,8 @@ from rrt_star_path_planning import RRTStar
 from astar_path_planning import AStar
 from vehicle_model import BicycleModel
 from pure_pursuit_controller import CompatibleController
+from mpc_controller import MPCController
+from stanley_controller import CompatibleStanleyController
 from font_support import set_chinese_font, labels, use_english_labels
 
 def main():
@@ -35,8 +37,24 @@ def main():
     
     while True:
         try:
-            choice = int(input("请输入数字 (1、2 或 3): "))
-            if choice in [1, 2, 3]:
+            planning_choice = int(input("请输入数字 (1、2 或 3): "))
+            if planning_choice in [1, 2, 3]:
+                break
+            else:
+                print("请输入有效的数字 1、2 或 3")
+        except ValueError:
+            print("请输入有效的数字 1、2 或 3")
+    
+    # 用户选择控制器算法
+    print("\n请选择控制器类型:")
+    print("1. Pure Pursuit (纯跟踪控制器)")
+    print("2. MPC (模型预测控制器)")
+    print("3. Stanley (Stanley路径跟踪控制器) [推荐]")
+    
+    while True:
+        try:
+            controller_choice = int(input("请输入数字 (1、2 或 3): "))
+            if controller_choice in [1, 2, 3]:
                 break
             else:
                 print("请输入有效的数字 1、2 或 3")
@@ -53,15 +71,15 @@ def main():
     env = Environment()
     
     # 根据选择创建路径规划器
-    if choice == 1:
+    if planning_choice == 1:
         print("使用RRT路径规划算法")
         planner = RRT(env, step_size=1.0, max_iter=20000, goal_sample_rate=30, max_turn_angle=10, safety_distance=1.5)
         filename = "rrt_path_planning.png"
-    elif choice == 2:
+    elif planning_choice == 2:
         print("使用A*路径规划算法")
         planner = AStar(env, grid_resolution=0.5, safety_distance=1.5)
         filename = "astar_path_planning.png"
-    else:  # choice == 3
+    else:  # planning_choice == 3
         print("使用RRT*路径规划算法（运动学约束+平滑版本）")
         planner = RRTStar(env, step_size=1.0, max_iter=200000, goal_sample_rate=20, 
                          safety_distance=1.5, rewire_radius=3.0, early_stop_enabled=True,
@@ -75,7 +93,7 @@ def main():
     
     # 路径规划
     algorithm_names = {1: "RRT", 2: "A*", 3: "RRT*"}
-    algorithm_name = algorithm_names[choice]
+    algorithm_name = algorithm_names[planning_choice]
     print(f"正在进行{algorithm_name}路径规划...")
     path = planner.planning(start_point[0], start_point[1], end_point[0], end_point[1])
     
@@ -84,10 +102,10 @@ def main():
         return
     
     # 路径处理 - 根据算法类型决定是否平滑
-    if choice == 1:  # RRT算法
+    if planning_choice == 1:  # RRT算法
         print("RRT路径平滑...")
         smooth_path = planner.smooth_path(path, smoothness=0.3)  # 使用0.3的平滑系数，增加平滑程度
-    elif choice == 2:  # A*算法
+    elif planning_choice == 2:  # A*算法
         print("A*算法使用原始路径，不进行平滑处理")
         smooth_path = path  # 直接使用原始路径
     else:  # RRT*算法
@@ -96,7 +114,7 @@ def main():
     
     # 保存并显示路径规划结果
     print("保存路径规划结果...")
-    if choice == 3:  # RRT*算法
+    if planning_choice == 3:  # RRT*算法
         planner.save_and_show_results(path, filename)
     else:
         planner.save_and_show_results(path, smooth_path, filename)
@@ -125,8 +143,20 @@ def main():
     # 创建路径跟踪控制器
     target_speed = 4.0  # 目标速度设置为4.0 m/s
     
-    # 创建路径跟踪控制器
-    controller = CompatibleController(dt=vehicle.dt, horizon=8)
+    # 根据用户选择创建控制器
+    if controller_choice == 1:
+        print("使用Pure Pursuit控制器")
+        controller = CompatibleController(dt=vehicle.dt, horizon=8)
+        controller_name = "Pure Pursuit"
+    elif controller_choice == 2:
+        print("使用MPC (模型预测控制)控制器")
+        controller = MPCController(dt=vehicle.dt, horizon=1)
+        controller_name = "MPC"
+    else:  # controller_choice == 3
+        print("使用Stanley路径跟踪控制器")
+        controller = CompatibleStanleyController(dt=vehicle.dt, horizon=8)
+        controller_name = "Stanley"
+    
     # 设置目标速度
     controller.target_speed = target_speed
     # 设置环境引用
@@ -140,8 +170,9 @@ def main():
     if smooth_path and len(smooth_path) >= 3:
         print(f"控制器路径前3点: {smooth_path[:3]}")
     path_types = {1: "RRT平滑路径", 2: "A*原始路径", 3: "RRT*约束+平滑路径"}
-    path_type = path_types[choice]
+    path_type = path_types[planning_choice]
     print(f"使用路径类型: {path_type}")
+    print(f"使用控制器: {controller_name}")
     
     # 仿真设置
     sim_time = 30.0  # 最大仿真时间 (s)
