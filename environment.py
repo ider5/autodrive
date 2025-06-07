@@ -57,9 +57,9 @@ class Environment:
         # 道路参数 - 调整长度以更接近图片比例
         self.road_length = 85.0  # 道路长度 (m)，从100米缩减到85米，保持比例
         
-        # 车辆参数
+        # 车辆参数 - 与vehicle_model.py保持一致
         self.vehicle_length = 4.0  # 车长 (m)
-        self.vehicle_width = 2.0   # 车宽 (m)
+        self.vehicle_width = 1.8   # 车宽 (m)，与vehicle_model.py一致
         
         # 车道宽度设置为车宽的2.2倍
         self.lane_width = self.vehicle_width * 2.2  # 车道宽度 (m)，从2.5倍减少到2.2倍
@@ -67,20 +67,21 @@ class Environment:
         self.road_width = self.lane_width * self.num_lanes  # 道路总宽度
         
         # 获取车道中心位置 - 交换车道编号：最上面的车道为道路3，最下面的车道为道路1
-        lane3_center = self.get_lane_center(1)  # 第三车道中心（最上方车道）
+        # 修正车道编号和中心计算
+        lane1_center = self.get_lane_center(1)  # 第一车道中心（最下方车道）
         lane2_center = self.get_lane_center(2)  # 第二车道中心（中间车道）
-        lane1_center = self.get_lane_center(3)  # 第一车道中心（最下方车道）
+        lane3_center = self.get_lane_center(3)  # 第三车道中心（最上方车道）
         
-        # 定义起点和终点位置 - 根据新的道路长度按比例调整
-        self.start_point = np.array([9.71, lane1_center])   # 起点在第一车道（最下方）左侧
-        self.end_point = np.array([80.0, lane3_center])    # 终点在第三车道（最上方）右侧，X坐标向右移至80m
+        # 定义起点和终点位置 - 根据用户要求：起点在上方车道，终点在下方车道
+        self.start_point = np.array([9.71, lane3_center])   # 起点在第三车道（最上方）左侧
+        self.end_point = np.array([80.0, lane1_center])    # 终点在第一车道（最下方）右侧，X坐标向右移至80m
         
-        # 使用固定的障碍车辆位置
+        # 使用固定的障碍车辆位置 - 更新布局以符合新的起点终点设置
         self.obstacle_vehicles = [
-            Vehicle(25.0, lane1_center, self.vehicle_length, self.vehicle_width, 0.0, 'blue'),  # 第一车道（下方）- 位于车道中心
+            Vehicle(25.0, lane3_center, self.vehicle_length, self.vehicle_width, 0.0, 'blue'),  # 第三车道（上方）- 起点车道障碍物
             Vehicle(48.27, lane2_center, self.vehicle_length, self.vehicle_width, 0.0, 'blue'),  # 第二车道（中间）
-            Vehicle(48.27, lane3_center, self.vehicle_length, self.vehicle_width, 0.0, 'blue'),  # 第三车道（上方）
-            Vehicle(60.0, lane3_center, self.vehicle_length, self.vehicle_width, 0.0, 'blue')   # 第三车道（上方）靠近终点
+            Vehicle(48.27, lane1_center, self.vehicle_length, self.vehicle_width, 0.0, 'blue'),  # 第一车道（下方）- 终点车道障碍物
+            Vehicle(60.0, lane1_center, self.vehicle_length, self.vehicle_width, 0.0, 'blue')   # 第一车道（下方）靠近终点
         ]
         
         # 为起点和终点创建车辆表示

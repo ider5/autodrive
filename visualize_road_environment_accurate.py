@@ -13,9 +13,9 @@ def visualize_road_environment_accurate():
     env = Environment()
     
     # 获取车道中心线位置（用于参考）
-    lane1_center = env.get_lane_center(3)  # 第一车道中心（最下方车道）
+    lane1_center = env.get_lane_center(1)  # 第一车道中心（最下方车道）
     lane2_center = env.get_lane_center(2)  # 第二车道中心（中间车道）
-    lane3_center = env.get_lane_center(1)  # 第三车道中心（最上方车道）
+    lane3_center = env.get_lane_center(3)  # 第三车道中心（最上方车道）
     
     # 创建大型画布
     plt.figure(figsize=(18, 12))

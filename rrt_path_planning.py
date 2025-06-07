@@ -138,8 +138,8 @@ class RRT:
                         elif current_lane == self.num_lanes - 1 and self.num_lanes > 1:
                             possible_lanes.append(current_lane - 1)  # 只能向左变道
                     
-                    # 如果没有允许变道且需要向下变道，增加沿当前车道向前行驶的概率
-                    if not allow_lane_change and initial_lane < goal_node.lane_id:
+                    # 如果没有允许变道且需要变道到目标车道，增加沿当前车道向前行驶的概率
+                    if not allow_lane_change and initial_lane != goal_node.lane_id:
                         forward_bias = 0.8  # 80%的概率向前行驶
                         if random.random() < forward_bias:
                             # 在当前车道前方区域采样
