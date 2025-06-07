@@ -6,9 +6,9 @@ import matplotlib.gridspec as gridspec
 import argparse
 
 from environment import Environment, Vehicle
-from path_planning import RRT
+from rrt_path_planning import RRT
 from vehicle_model import BicycleModel
-from controller import CompatibleController
+from pure_pursuit_controller import CompatibleController
 from font_support import set_chinese_font, labels, use_english_labels
 
 def main():
