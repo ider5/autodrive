@@ -1,32 +1,45 @@
+"""
+字体支持模块
+
+本模块提供中文字体设置和多语言标签支持，
+确保matplotlib正确显示中文字符。
+"""
+
 import matplotlib.pyplot as plt
-import matplotlib
-import os
+import matplotlib as mpl
 import platform
+import os
+
 
 def set_chinese_font():
-    """设置中文字体"""
+    """
+    设置matplotlib的中文字体
+    
+    自动检测操作系统并设置合适的中文字体，
+    解决matplotlib显示中文时的乱码问题。
+    """
     system = platform.system()
     if system == 'Windows':
         # Windows系统
         font_list = ['Microsoft YaHei', 'SimHei', 'SimSun']
         for font in font_list:
             try:
-                matplotlib.rcParams['font.family'] = font
-                matplotlib.rcParams['axes.unicode_minus'] = False  # 解决负号显示问题
+                mpl.rcParams['font.family'] = font
+                mpl.rcParams['axes.unicode_minus'] = False  # 解决负号显示问题
                 break
             except:
                 continue
     elif system == 'Linux':
         # Linux系统
-        matplotlib.rcParams['font.family'] = 'WenQuanYi Micro Hei'
-        matplotlib.rcParams['axes.unicode_minus'] = False
+        mpl.rcParams['font.family'] = 'WenQuanYi Micro Hei'
+        mpl.rcParams['axes.unicode_minus'] = False
     elif system == 'Darwin':
         # macOS系统
-        matplotlib.rcParams['font.family'] = 'Arial Unicode MS'
-        matplotlib.rcParams['axes.unicode_minus'] = False
+        mpl.rcParams['font.family'] = 'Arial Unicode MS'
+        mpl.rcParams['axes.unicode_minus'] = False
     
     # 如果上述字体都不可用，使用英文标签替代
-    if matplotlib.rcParams['font.family'] == 'sans-serif':
+    if mpl.rcParams['font.family'] == 'sans-serif':
         use_english_labels()
 
 def use_english_labels():

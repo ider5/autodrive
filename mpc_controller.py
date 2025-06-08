@@ -1,27 +1,32 @@
+"""
+模型预测控制器（MPC）
+
+本模块实现模型预测控制算法，用于车辆的路径跟踪控制。
+MPC通过预测车辆未来状态并优化控制序列来实现精确的路径跟踪。
+"""
+
 import numpy as np
 import scipy.optimize as opt
 from scipy.optimize import minimize
 import warnings
 warnings.filterwarnings('ignore')
+from vehicle_model import BicycleModel
 
 class SimpleMPCController:
     """
-    彻底重新设计的MPC控制器
+    简化模型预测控制器
     
-    设计理念：
-    1. 使用简化的运动学模型，避免复杂的线性化
-    2. 直接优化路径跟踪误差，而不是复杂的预测模型
-    3. 采用基于误差的代价函数，更直观更稳定
-    4. 保证解的存在性和实用性
+    该类实现简化的MPC算法，通过优化控制输入来最小化路径跟踪误差。
+    控制器考虑车辆动力学约束和路径跟踪性能指标。
     """
     
     def __init__(self, dt=0.1, horizon=1):
         """
-        初始化简化MPC控制器
+        初始化MPC控制器
         
         参数:
-            dt: 时间步长
-            horizon: 预测时域 (设为1，移除预测功能，变成即时控制器)
+            dt (float): 采样时间步长
+            horizon (int): 预测时域长度
         """
         self.dt = dt
         self.horizon = horizon
@@ -229,14 +234,14 @@ class SimpleMPCController:
             # 找到最近的路径点
             nearest_idx = self._find_nearest_point(vehicle)
             
-            # 计算前瞻点（向前看几个点）
-            # 根据速度动态调整前瞻距离
-            if vehicle.v > 2.5:
-                lookahead_points = 5  # 高速时看得更远
-            elif vehicle.v > 1.0:
-                lookahead_points = 3  # 中速
+            # 简化前瞻逻辑 - 在短道路低速环境下减少预测
+            # 根据车速和道路特点调整前瞻距离
+            if vehicle.v > 3.0:
+                lookahead_points = 2  # 即使高速也只看2个点
+            elif vehicle.v > 1.5:
+                lookahead_points = 1  # 中速只看1个点
             else:
-                lookahead_points = 2  # 低速或启动时
+                lookahead_points = 1  # 低速专注当前点
             target_idx = min(nearest_idx + lookahead_points, len(self.path) - 1)
             target_point = self.path[target_idx]
             
@@ -281,15 +286,22 @@ class SimpleMPCController:
             else:
                 lateral_error = 0.0
             
-            # 2. Stanley控制器部分 - 横向误差修正
-            k_lateral = 2.5  # 横向误差增益
-            lateral_control = np.arctan(k_lateral * lateral_error / max(vehicle.v, 0.5))
+            # 2. 简化控制 - 减少复杂的组合控制
+            # 直接基于目标点的几何关系进行控制
+            k_lateral = 1.8  # 降低横向误差增益，避免过激反应
+            k_yaw = 1.5      # 降低航向误差增益
             
-            # 3. Pure Pursuit部分 - 航向角跟踪
-            k_yaw = 2.5      # 航向误差增益
-            heading_control = k_yaw * yaw_error
+            # 在低速短道路环境下，主要关注航向跟踪，减少横向修正
+            if vehicle.v < 2.0:
+                # 低速时主要跟踪航向，减少横向修正的权重
+                lateral_control = np.arctan(k_lateral * 0.5 * lateral_error / max(vehicle.v, 0.3))
+                heading_control = k_yaw * yaw_error
+            else:
+                # 中高速时正常控制
+                lateral_control = np.arctan(k_lateral * lateral_error / max(vehicle.v, 0.5))
+                heading_control = k_yaw * 0.8 * yaw_error  # 稍微降低航向增益
             
-            # 4. 组合控制
+            # 4. 简化组合控制
             delta = lateral_control + heading_control
             
             # 5. 边界保护 - 防止车辆偏离车道
@@ -316,57 +328,30 @@ class SimpleMPCController:
             # 限制转向角
             delta = np.clip(delta, -self.max_steer, self.max_steer)
             
-            # === 速度控制 ===
-            # 基于距离目标和速度误差的控制
+            # === 简化速度控制 ===
+            # 在短道路低速环境下，简化速度控制逻辑
             speed_error = self.target_speed - vehicle.v
             
-            # 基础加速度控制（平衡安全和效率）
-            # 考虑安全因素
-            is_near_boundary = (vehicle.y > road_upper - safety_margin) or (vehicle.y < road_lower + safety_margin)
-            large_lateral_error = abs(lateral_error) > 0.8  # 提高阈值，避免过于保守
-            sharp_turn = abs(yaw_error) > np.deg2rad(45)   # 提高阈值，只在真正急转弯时减速
-            
-            # 优先保持前进速度，避免过度减速
+            # 简化的速度控制 - 减少复杂判断
             if vehicle.v < 0.1:
-                # 启动阶段：强力加速
-                accel = 1.8
-            elif vehicle.v < 0.5:
-                # 低速时：确保加速
-                accel = 1.5
-            elif is_near_boundary and large_lateral_error:
-                # 同时满足边界接近和大误差才减速
-                accel = 0.0  # 维持速度而非减速
-            elif sharp_turn and vehicle.v > 2.5:
-                # 只在高速急转弯时减速
-                accel = -0.3
-            elif speed_error > 1.0:
-                # 速度明显不足：强加速
-                accel = 1.5
-            elif speed_error > 0.2:
-                # 速度略不足：加速
+                # 启动阶段
+                accel = 1.2
+            elif speed_error > 0.5:
+                # 速度明显不足：加速
                 accel = 1.0
-            elif speed_error < -1.0:
-                # 速度明显过高：减速
-                accel = -0.6
+            elif speed_error > 0.1:
+                # 速度略不足：轻加速
+                accel = 0.6
             elif speed_error < -0.5:
-                # 速度略高：轻微减速
-                accel = -0.3
+                # 速度过高：减速
+                accel = -0.4
             else:
-                # 速度接近目标：比例控制
-                accel = speed_error * 1.0  # 提高响应性
+                # 速度接近目标：简单比例控制
+                accel = speed_error * 0.8
             
-            # 根据路径曲率调整速度
-            if len(self.path) > target_idx + 1:
-                next_point = self.path[target_idx + 1]
-                dx1 = target_point[0] - vehicle.x
-                dy1 = target_point[1] - vehicle.y
-                dx2 = next_point[0] - target_point[0]
-                dy2 = next_point[1] - target_point[1]
-                
-                # 简单曲率估计
-                cross_product = abs(dx1 * dy2 - dy1 * dx2)
-                if cross_product > 1.0:  # 检测到弯道
-                    accel *= 0.7  # 弯道减速
+            # 简化的转向减速 - 只在转向角很大时减速
+            if abs(delta) > np.deg2rad(15) and vehicle.v > 2.0:
+                accel *= 0.8  # 大转向角时适度减速
             
             # 限制加速度
             accel = np.clip(accel, self.max_decel, self.max_accel)

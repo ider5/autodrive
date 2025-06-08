@@ -1,3 +1,10 @@
+"""
+RRT路径规划算法实现
+
+本模块实现快速随机树（RRT）路径规划算法，用于自动驾驶车辆的
+全局路径规划。算法支持障碍物避障、路径平滑处理和可视化。
+"""
+
 import numpy as np
 import matplotlib.pyplot as plt
 import random
@@ -5,18 +12,23 @@ import time
 from matplotlib.patches import Rectangle, Circle, Polygon
 
 class RRT:
-    """RRT路径规划算法 - 改进版"""
+    """
+    快速随机树路径规划算法
+    
+    该类实现RRT算法用于在存在障碍物的环境中寻找从起点到终点的可行路径。
+    算法通过随机采样和碰撞检测构建搜索树，找到连接起点和终点的路径。
+    """
     def __init__(self, env, step_size=1.5, max_iter=30000, goal_sample_rate=40, max_turn_angle=30, safety_distance=0.5):
         """
         初始化RRT路径规划器
         
         参数:
-            env: 环境对象
-            step_size: 随机树扩展步长
-            max_iter: 最大迭代次数
-            goal_sample_rate: 目标点采样率 (%)
-            max_turn_angle: 最大转向角度 (度)
-            safety_distance: 与障碍物的安全距离 (m)
+            env: 环境对象，包含道路信息和障碍物
+            step_size (float): 随机树扩展步长（米）
+            max_iter (int): 最大迭代次数
+            goal_sample_rate (int): 目标点采样率（百分比）
+            max_turn_angle (float): 最大转弯角度（度）
+            safety_distance (float): 与障碍物的安全距离（米）
         """
         self.env = env  # 环境对象
         self.step_size = step_size  # 步长

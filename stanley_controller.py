@@ -1,11 +1,19 @@
+"""
+Stanley路径跟踪控制器
+
+本模块实现Stanley控制算法，用于车辆的精确路径跟踪。
+Stanley控制器结合横向误差和朝向误差，具有良好的路径跟踪性能。
+"""
+
 import numpy as np
 from vehicle_model import BicycleModel
 
 class StanleyController:
-    """Stanley路径跟踪控制器
+    """
+    Stanley路径跟踪控制器
     
-    基于斯坦福大学在DARPA挑战赛中获胜的Stanley控制器
-    特点：结合横向误差和朝向误差，路径跟踪精度高
+    该类实现Stanley控制算法，通过同时考虑车辆的横向位置误差
+    和朝向误差来计算转向控制量，实现高精度的路径跟踪。
     """
     
     def __init__(self, dt=0.1, horizon=8):
@@ -13,8 +21,8 @@ class StanleyController:
         初始化Stanley控制器
         
         参数:
-            dt: 采样时间步长
-            horizon: 兼容参数，Stanley不需要预测时域
+            dt (float): 采样时间步长
+            horizon (int): 兼容参数，Stanley不需要预测时域
         """
         # 基本参数
         self.dt = dt

@@ -1,22 +1,54 @@
+"""
+车辆动力学模型
+
+本模块实现用于车辆动力学仿真的自行车模型。
+自行车模型是车辆运动的简化表示，能够捕捉自动驾驶应用中的基本运动学行为。
+"""
+
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
 
 class BicycleModel:
-    """自行车模型（运动学模型）"""
-    def __init__(self):
+    """
+    车辆动力学仿真的自行车模型
+    
+    该类实现运动学自行车模型，使用简化的两轮动力学表示车辆运动。
+    该模型在自动驾驶研究中常用，兼顾了精度和计算效率。
+    
+    属性:
+        x (float): 车辆x坐标位置
+        y (float): 车辆y坐标位置  
+        yaw (float): 车辆航向角（弧度）
+        v (float): 车辆速度（米/秒）
+        length (float): 车辆长度（米）
+        width (float): 车辆宽度（米）
+        wheelbase (float): 前后轴距离
+        dt (float): 数值积分时间步长
+    """
+    def __init__(self, x=0.0, y=0.0, yaw=0.0, v=0.0, dt=0.1):
+        """
+        初始化自行车模型
+        
+        参数:
+            x (float): 初始x坐标位置
+            y (float): 初始y坐标位置
+            yaw (float): 初始航向角（弧度）
+            v (float): 初始速度（米/秒）
+            dt (float): 积分时间步长
+        """
         # 车辆参数
         self.L = 2.0  # 轴距 (m)
         self.max_steer = np.deg2rad(20.0)  # 降低最大转向角 (rad)，从30度降低到20度
-        self.dt = 0.1  # 时间步长，恢复为0.1秒
+        self.dt = dt  # 时间步长，恢复为0.1秒
         self.width = 1.8  # 车宽 (m)
         self.length = 4.0  # 车长 (m)
         
         # 车辆状态 [x, y, yaw, v]
-        self.x = 0.0  # 位置x
-        self.y = 0.0  # 位置y
-        self.yaw = 0.0  # 航向角
-        self.v = 0.0  # 速度
+        self.x = x  # 位置x
+        self.y = y  # 位置y
+        self.yaw = yaw  # 航向角
+        self.v = v  # 速度
         
         # 控制输入
         self.delta = 0.0  # 前轮转向角

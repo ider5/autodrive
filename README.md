@@ -1,100 +1,145 @@
 # 自动驾驶仿真系统
 
-这个项目实现了一个基于Pure Pursuit算法的自动驾驶车辆路径跟踪仿真系统，可以控制车辆在特定环境中沿规划好的轨迹行驶。
+一个集成多种路径规划算法和控制器的自动驾驶仿真平台，支持obstacle避障、路径规划和车辆控制的完整仿真。
 
-## 项目结构
+## 功能特性
 
-- `environment.py`: 环境定义，包括道路、车道和障碍物
-- `path_planning.py`: 基于RRT算法的路径规划器
-- `vehicle_model.py`: 车辆运动学模型（自行车模型）
-- `controller.py`: Pure Pursuit路径跟踪控制器
-- `font_support.py`: 支持中文字体显示
-- `main.py`: 主程序，协调各组件并运行仿真
+- **多种路径规划算法**：支持RRT、A*、RRT*算法
+- **多种控制器**：集成Pure Pursuit、MPC、Stanley控制器  
+- **完整仿真环境**：三车道道路场景，包含静态障碍车辆
+- **可视化功能**：实时路径显示、动画仿真、结果分析
+- **中文界面**：完整的中文用户界面和文档
 
-## 系统功能
+## 系统架构
 
-- **环境模拟**: 模拟真实道路环境，包括多车道和静态障碍物
-- **路径规划**: 使用RRT算法自动规划从起点到终点的路径
-- **路径平滑**: 对规划路径进行平滑处理，使车辆行驶更加平稳
-- **Pure Pursuit控制器**: 
-  - 采用经典的Pure Pursuit算法进行路径跟踪
-  - 包含自适应前瞻距离与速度调整
-  - 集成边界避让和安全保护机制
-- **可视化**: 实时显示车辆运动、预测轨迹和规划路径
+```
+自动驾驶仿真系统
+├── 环境模块 (environment.py)
+├── 车辆模型 (vehicle_model.py)  
+├── 路径规划
+│   ├── RRT算法 (rrt_path_planning.py)
+│   ├── A*算法 (astar_path_planning.py)
+│   └── RRT*算法 (rrt_star_path_planning.py)
+├── 控制器
+│   ├── Pure Pursuit (pure_pursuit_controller.py)
+│   ├── MPC控制器 (mpc_controller.py)
+│   └── Stanley控制器 (stanley_controller.py)
+└── 主程序 (main.py)
+```
 
 ## 安装依赖
 
-项目需要以下Python库：
-
 ```bash
-pip install numpy matplotlib
+pip install -r requirements.txt
 ```
+
+### 依赖包列表
+
+- numpy: 数值计算
+- matplotlib: 绘图和可视化
+- scipy: 科学计算和优化
 
 ## 使用方法
 
-1. 确保已安装所有必要的依赖
-2. 运行仿真：
+### 基本运行
 
 ```bash
 python main.py
 ```
 
-可选参数：
-- `--seed <整数>`: 设置随机种子，确保路径规划结果可重现
+### 设置随机种子
 
-## 技术细节
+```bash
+python main.py --seed 42
+```
 
-### 路径规划 (RRT)
+### 交互式选择
 
-- **算法**: 快速探索随机树(Rapidly-exploring Random Tree)
-- **特点**: 
-  - 高效探索复杂环境
-  - 支持起点到终点的路径规划
-  - 考虑障碍物和安全距离
+运行程序后，系统会提示选择：
 
-### 路径平滑
+1. **路径规划算法**：
+   - RRT (快速随机树)
+   - A* (A星算法)  
+   - RRT* (优化随机树)
 
-- 多级平滑处理，减少锯齿
-- 保证平滑路径依然在道路内并避开障碍物
-- 可调节平滑系数
+2. **控制器类型**：
+   - Pure Pursuit (纯跟踪控制器)
+   - MPC (模型预测控制器)
+   - Stanley (Stanley路径跟踪控制器)
 
-### Pure Pursuit控制器
+## 算法说明
 
-- **工作原理**: 计算从当前位置到前方"目标点"的曲率，进而计算转向角
-- **特点**:
-  - 动态前瞻距离: 根据速度自适应调整前瞻距离
-  - 曲率自适应速度: 转弯处自动减速
-  - 边界避让: 接近道路边界时自动修正
-  - 紧急修正: 当检测到碰撞风险时执行紧急避让
+### 路径规划算法
 
-### 车辆模型
+- **RRT算法**：通过随机采样快速构建搜索树，适合复杂环境的路径规划
+- **A*算法**：基于网格的启发式搜索，保证最优路径
+- **RRT*算法**：RRT的改进版本，通过重连操作实现渐近最优
 
-- 采用自行车运动学模型
-- 考虑车辆物理约束：
-  - 最大速度和加速度
-  - 最大转向角和转向速率
-  - 车辆尺寸（长度与宽度）
+### 控制器
 
-## 仿真结果
+- **Pure Pursuit**：几何路径跟踪方法，通过追踪前瞻点实现控制
+- **MPC**：模型预测控制，通过优化未来控制序列实现精确跟踪
+- **Stanley**：结合横向误差和朝向误差的高精度控制器
 
-仿真过程会生成以下输出文件：
-- `rrt_path_planning.png`: 路径规划结果图
-- `simulation_results.png`: 完整仿真结果，包括车辆轨迹和速度曲线
-- `vehicle_animation.gif`: 车辆行驶动画
+## 仿真环境
 
-## 自定义
+- **道路规格**：85米长，三车道，每车道3.96米宽
+- **车辆尺寸**：4.0米长，1.8米宽  
+- **起点位置**：(9.71, 9.9) 第三车道
+- **终点位置**：(80.0, 2.0) 第一车道
+- **静态障碍物**：4辆静止车辆分布在不同位置
 
-可以通过修改以下文件来自定义仿真：
+## 输出结果
 
-- `environment.py`: 修改道路环境和障碍物位置
-- `controller.py`: 调整Pure Pursuit控制器参数
-- `vehicle_model.py`: 修改车辆模型参数
-- `path_planning.py`: 优化RRT路径规划算法参数
+仿真完成后会生成：
 
-## 扩展方向
+- **路径规划图**：显示算法生成的路径
+- **仿真结果图**：包含路径跟踪、速度曲线等信息  
+- **动画文件**：vehicle_animation.gif，展示车辆运动过程
 
-- 添加动态障碍物
-- 实现车道变换决策
-- 集成其他控制算法如MPC或LQR
-- 添加传感器模型和感知模块
-- 实现多车协同仿真
+## 项目结构
+
+```
+├── main.py                 # 主程序入口
+├── environment.py          # 仿真环境
+├── vehicle_model.py        # 车辆动力学模型
+├── rrt_path_planning.py    # RRT路径规划
+├── astar_path_planning.py  # A*路径规划  
+├── rrt_star_path_planning.py # RRT*路径规划
+├── pure_pursuit_controller.py # Pure Pursuit控制器
+├── mpc_controller.py       # MPC控制器
+├── stanley_controller.py   # Stanley控制器
+├── font_support.py         # 字体支持
+├── requirements.txt        # 依赖包列表
+└── README.md              # 项目说明
+```
+
+## 参数配置
+
+### 路径规划参数
+
+- `step_size`: 搜索步长
+- `max_iter`: 最大迭代次数  
+- `safety_distance`: 安全距离
+- `goal_sample_rate`: 目标采样率
+
+### 控制参数
+
+- `target_speed`: 目标速度 (4.0 m/s)
+- `max_steer`: 最大转向角
+- `dt`: 时间步长 (0.1s)
+
+## 注意事项
+
+1. 首次运行可能需要安装字体支持
+2. 仿真过程中请勿关闭matplotlib窗口
+3. 结果图片会保存在当前目录下
+4. 建议在Python 3.7+环境下运行
+
+## 贡献指南
+
+欢迎提交Issue和Pull Request来改进项目。
+
+## 许可证
+
+本项目采用MIT许可证，详见LICENSE文件。

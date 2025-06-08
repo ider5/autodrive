@@ -1,19 +1,40 @@
+"""
+自动驾驶仿真环境模块
+
+本模块为自动驾驶车辆仿真提供道路环境，包括障碍物管理、
+碰撞检测和可视化功能。
+"""
+
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.patches as patches
 from matplotlib.patches import Rectangle, Polygon
 from font_support import set_chinese_font, labels
 import random
 
-class Vehicle:
-    """车辆类（包括静态障碍物）"""
-    def __init__(self, x, y, length=4.0, width=2.0, yaw=0.0, color='blue', is_static=True):
+class ObstacleVehicle:
+    """
+    仿真环境中的静态障碍车辆类
+    
+    该类模拟静止的车辆障碍物，用于路径规划算法的避障测试
+    """
+    
+    def __init__(self, x, y, length=4.0, width=1.8, angle=0):
+        """
+        初始化障碍车辆
+        
+        参数:
+            x (float): 车辆中心x坐标
+            y (float): 车辆中心y坐标  
+            length (float): 车辆长度（米）
+            width (float): 车辆宽度（米）
+            angle (float): 车辆朝向角度（弧度）
+        """
         self.x = x  # 中心x坐标
         self.y = y  # 中心y坐标
         self.length = length  # 车长
         self.width = width    # 车宽
-        self.yaw = yaw        # 航向角
-        self.color = color    # 颜色
-        self.is_static = is_static  # 是否为静态障碍物
+        self.angle = angle    # 航向角
         
     def draw(self, ax):
         """绘制车辆"""
@@ -25,32 +46,47 @@ class Vehicle:
         # 创建矩形表示车辆
         car = Rectangle(
             (corner_x, corner_y),
-            self.length, self.width, angle=np.rad2deg(self.yaw),
-            facecolor=self.color, alpha=0.8, edgecolor='black', linewidth=1)
+            self.length, self.width, angle=np.rad2deg(self.angle),
+            facecolor='blue', alpha=0.8, edgecolor='black', linewidth=1)
         ax.add_patch(car)
         
         # 标记车辆中心点（用于调试）
         ax.plot(self.x, self.y, 'ko', markersize=3)
         
-        # 如果不是静态车辆，画出车辆前进方向
-        if not self.is_static:
-            ax.arrow(self.x, self.y, 
-                    0.5 * np.cos(self.yaw), 
-                    0.5 * np.sin(self.yaw),
-                    head_width=0.3, head_length=0.3, 
-                    fc='red', ec='red')
-            
         return car
     
-    def update_position(self, x, y, yaw=None):
+    def update_position(self, x, y, angle=None):
         """更新车辆位置"""
         self.x = x
         self.y = y
-        if yaw is not None:
-            self.yaw = yaw
+        if angle is not None:
+            self.angle = angle
 
 class Environment:
+    """
+    道路环境仿真类
+    
+    该类管理仿真环境，包括道路布局、障碍车辆、碰撞检测和可视化。
+    为路径规划算法提供标准化接口。
+    
+    属性:
+        road_length (float): 道路总长度（米）
+        road_width (float): 道路总宽度（米）
+        num_lanes (int): 车道数量
+        lane_width (float): 单车道宽度（米）
+        vehicle_length (float): 标准车辆长度
+        vehicle_width (float): 标准车辆宽度
+        start_point (tuple): 起始位置坐标 (x, y)
+        end_point (tuple): 目标位置坐标 (x, y)
+        obstacle_vehicles (list): 静态障碍车辆列表
+    """
+    
     def __init__(self):
+        """
+        初始化道路环境
+        
+        建立三车道道路，设置预定义尺寸并在关键位置放置障碍车辆
+        """
         # 设置中文字体
         set_chinese_font()
         
@@ -78,17 +114,17 @@ class Environment:
         
         # 使用固定的障碍车辆位置 - 更新布局以符合新的起点终点设置
         self.obstacle_vehicles = [
-            Vehicle(25.0, lane3_center, self.vehicle_length, self.vehicle_width, 0.0, 'blue'),  # 第三车道（上方）- 起点车道障碍物
-            Vehicle(48.27, lane2_center, self.vehicle_length, self.vehicle_width, 0.0, 'blue'),  # 第二车道（中间）
-            Vehicle(48.27, lane1_center, self.vehicle_length, self.vehicle_width, 0.0, 'blue'),  # 第一车道（下方）- 终点车道障碍物
-            Vehicle(60.0, lane1_center, self.vehicle_length, self.vehicle_width, 0.0, 'blue')   # 第一车道（下方）靠近终点
+            ObstacleVehicle(25.0, lane3_center, self.vehicle_length, self.vehicle_width, 0.0),  # 第三车道（上方）- 起点车道障碍物
+            ObstacleVehicle(48.27, lane2_center, self.vehicle_length, self.vehicle_width, 0.0),  # 第二车道（中间）
+            ObstacleVehicle(48.27, lane1_center, self.vehicle_length, self.vehicle_width, 0.0),  # 第一车道（下方）- 终点车道障碍物
+            ObstacleVehicle(60.0, lane1_center, self.vehicle_length, self.vehicle_width, 0.0)   # 第一车道（下方）靠近终点
         ]
         
         # 为起点和终点创建车辆表示
-        self.start_vehicle = Vehicle(self.start_point[0], self.start_point[1], 
-                                     self.vehicle_length, self.vehicle_width, 0.0, 'green')
-        self.end_vehicle = Vehicle(self.end_point[0], self.end_point[1], 
-                                  self.vehicle_length, self.vehicle_width, 0.0, 'green')
+        self.start_vehicle = ObstacleVehicle(self.start_point[0], self.start_point[1], 
+                                     self.vehicle_length, self.vehicle_width, 0.0)
+        self.end_vehicle = ObstacleVehicle(self.end_point[0], self.end_point[1], 
+                                  self.vehicle_length, self.vehicle_width, 0.0)
         
         # 车道颜色
         self.lane_colors = ['#f0f0f0', '#e8e8e8', '#f0f0f0']  # 为每条车道设置不同的底色
@@ -107,14 +143,14 @@ class Environment:
         """更新障碍物位置（保留空方法以兼容原有代码）"""
         pass
     
-    def is_collision(self, x, y, radius=0.0, yaw=0.0, length=None, width=None):
+    def is_collision(self, x, y, radius=0.0, angle=0.0, length=None, width=None):
         """检测给定位置是否与障碍物碰撞
         
         参数:
             x (float): 车辆中心x坐标
             y (float): 车辆中心y坐标
             radius (float): 用于简单碰撞检测的半径
-            yaw (float): 车辆航向角
+            angle (float): 车辆航向角
             length (float): 车辆长度，默认使用初始化时设置的值
             width (float): 车辆宽度，默认使用初始化时设置的值
             
@@ -148,8 +184,8 @@ class Environment:
             
         # 精确的矩形边界碰撞检测
         # 1. 计算运动车辆的四个角点坐标
-        cos_yaw = np.cos(yaw)
-        sin_yaw = np.sin(yaw)
+        cos_angle = np.cos(angle)
+        sin_angle = np.sin(angle)
         
         half_length = length / 2
         half_width = width / 2
@@ -165,8 +201,8 @@ class Environment:
         # 计算旋转后的实际角点坐标
         corners = []
         for dx, dy in corners_offsets:
-            rotated_dx = dx * cos_yaw - dy * sin_yaw
-            rotated_dy = dx * sin_yaw + dy * cos_yaw
+            rotated_dx = dx * cos_angle - dy * sin_angle
+            rotated_dy = dx * sin_angle + dy * cos_angle
             corners.append([x + rotated_dx, y + rotated_dy])
         
         # 2. 检查是否与道路边界碰撞（边对边检测）

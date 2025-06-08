@@ -1,11 +1,19 @@
+"""
+自动驾驶仿真系统主程序
+
+本程序集成了多种路径规划算法和控制器，提供完整的自动驾驶仿真平台。
+支持RRT、A*、RRT*路径规划算法，以及Pure Pursuit、MPC、Stanley控制器。
+"""
+
+import argparse
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 from matplotlib.patches import Rectangle, Circle
 import matplotlib.gridspec as gridspec
-import argparse
 
-from environment import Environment, Vehicle
+# 导入各个模块
+from environment import Environment
 from rrt_path_planning import RRT
 from rrt_star_path_planning import RRTStar
 from astar_path_planning import AStar
@@ -16,6 +24,12 @@ from stanley_controller import CompatibleStanleyController
 from font_support import set_chinese_font, labels, use_english_labels
 
 def main():
+    """
+    主函数：运行自动驾驶仿真系统
+    
+    该函数协调整个仿真流程，包括算法选择、路径规划、
+    车辆控制和结果可视化。
+    """
     # 创建命令行参数解析器，只保留随机数种子参数
     parser = argparse.ArgumentParser(description='自动驾驶仿真系统')
     parser.add_argument('--seed', type=int, default=None, help='随机数种子')
@@ -80,11 +94,9 @@ def main():
         planner = AStar(env, grid_resolution=0.5, safety_distance=1.5)
         filename = "astar_path_planning.png"
     else:  # planning_choice == 3
-        print("使用RRT*路径规划算法（运动学约束+平滑版本）")
-        planner = RRTStar(env, step_size=1.0, max_iter=200000, goal_sample_rate=20, 
-                         safety_distance=1.5, rewire_radius=3.0, early_stop_enabled=True,
-                         no_improvement_limit=8000, improvement_threshold=0.1, 
-                         target_quality_factor=1.15, smooth_iterations=3)
+        print("使用RRT*路径规划算法（简化版）")
+        planner = RRTStar(env, step_size=1.5, max_iter=25000, goal_sample_rate=20, 
+                         safety_distance=1.7, rewire_radius=3.0)
         filename = "rrt_star_path_planning.png"
     
     # 获取起点和终点
@@ -109,12 +121,13 @@ def main():
         print("A*算法使用原始路径，不进行平滑处理")
         smooth_path = path  # 直接使用原始路径
     else:  # RRT*算法
-        print("RRT*算法使用约束+平滑路径")
-        smooth_path = path  # RRT*生成约束路径并进行平滑处理
+        print("RRT*算法使用原始路径（未进行平滑处理）")
+        smooth_path = path  # RRT*直接返回原始路径
     
     # 保存并显示路径规划结果
     print("保存路径规划结果...")
     if planning_choice == 3:  # RRT*算法
+        # 简化版RRT*直接传入路径
         planner.save_and_show_results(path, filename)
     else:
         planner.save_and_show_results(path, smooth_path, filename)
@@ -169,7 +182,7 @@ def main():
     print(f"车辆初始位置: ({vehicle.x:.2f}, {vehicle.y:.2f}), 航向: {np.rad2deg(vehicle.yaw):.2f}度")
     if smooth_path and len(smooth_path) >= 3:
         print(f"控制器路径前3点: {smooth_path[:3]}")
-    path_types = {1: "RRT平滑路径", 2: "A*原始路径", 3: "RRT*约束+平滑路径"}
+    path_types = {1: "RRT平滑路径", 2: "A*原始路径", 3: "RRT*原始路径"}
     path_type = path_types[planning_choice]
     print(f"使用路径类型: {path_type}")
     print(f"使用控制器: {controller_name}")
@@ -209,7 +222,7 @@ def main():
         next_y = vehicle.y + vehicle.v * np.sin(vehicle.yaw) * dt
         
         # 检查下一位置是否有碰撞风险或超出车道
-        if env.is_collision(next_x, next_y, radius=0, yaw=vehicle.yaw, length=vehicle.length, width=vehicle.width):
+        if env.is_collision(next_x, next_y, radius=0, angle=vehicle.yaw, length=vehicle.length, width=vehicle.width):
             collision_count += 1
             if collision_count >= max_collision_count:
                 print(f"发生碰撞或超出车道！时间: {time:.2f}秒")
@@ -221,7 +234,7 @@ def main():
         vehicle.update(ai, delta)
         
         # 检查碰撞（用于记录，但不立即终止）
-        if env.is_collision(vehicle.x, vehicle.y, radius=0, yaw=vehicle.yaw, length=vehicle.length, width=vehicle.width):
+        if env.is_collision(vehicle.x, vehicle.y, radius=0, angle=vehicle.yaw, length=vehicle.length, width=vehicle.width):
             print(f"警告：位置({vehicle.x:.2f}, {vehicle.y:.2f})可能存在碰撞风险")
         
         # 记录轨迹
@@ -251,15 +264,18 @@ def main():
     
     print(f"模拟结束, 总行驶距离: {total_distance:.2f}米")
     
+    # 获取路径规划器的实际安全距离
+    planner_safety_distance = getattr(planner, 'safety_distance', 1.5)  # 默认1.5m
+    
     # 绘制并保存结果
     print("绘制模拟结果...")
-    plot_simulation_result(env, path, smooth_path, x_history, y_history, v_history, t_history, target_v_history)
+    plot_simulation_result(env, path, smooth_path, x_history, y_history, v_history, t_history, target_v_history, planner_safety_distance)
     
     # 创建动画
     print("创建模拟动画...")
-    create_animation(env, smooth_path, x_history, y_history, yaw_history, v_history)
+    create_animation(env, smooth_path, x_history, y_history, yaw_history, v_history, planner_safety_distance)
 
-def plot_simulation_result(env, path, smooth_path, x_history, y_history, v_history, t_history, target_v_history=None):
+def plot_simulation_result(env, path, smooth_path, x_history, y_history, v_history, t_history, target_v_history=None, safety_distance=1.5):
     """绘制模拟结果"""
     # 创建带有特定布局的图形
     fig = plt.figure(figsize=(18, 10))
@@ -273,10 +289,7 @@ def plot_simulation_result(env, path, smooth_path, x_history, y_history, v_histo
     title = labels.get('路径规划与跟踪', 'Path Planning & Tracking')
     ax1.set_title(title, fontsize=14, fontweight='bold')
     
-    # 安全距离设置（不再显示红色虚线）
-    safety_distance = 1.5  # 安全距离设置为1.5米
-    
-    # 在图像上添加安全距离说明
+    # 在图像上添加安全距离说明（使用传入的实际安全距离值）
     ax1.text(5, env.road_width - 0.5, 
              f"安全距离: {safety_distance:.2f}米", 
              fontsize=12, color='black', 
@@ -361,7 +374,7 @@ def plot_simulation_result(env, path, smooth_path, x_history, y_history, v_histo
     plt.savefig('simulation_results.png', dpi=120, bbox_inches='tight')
     plt.show()
 
-def create_animation(env, path, x_history, y_history, yaw_history, v_history):
+def create_animation(env, path, x_history, y_history, yaw_history, v_history, safety_distance=1.5):
     """创建动画"""
     # 创建单独的图形对象
     fig, ax = plt.subplots(figsize=(14, 7))
@@ -369,10 +382,7 @@ def create_animation(env, path, x_history, y_history, yaw_history, v_history):
     # 绘制环境
     env.plot_environment(ax)
     
-    # 安全距离设置（不再显示红色虚线）
-    safety_distance = 1.5  # 安全距离设置为1.5米
-    
-    # 在图像上添加安全距离说明
+    # 在图像上添加安全距离说明（使用传入的实际安全距离值）
     ax.text(5, env.road_width - 0.5, 
             f"安全距离: {safety_distance:.2f}米", 
             fontsize=12, color='black', 

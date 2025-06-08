@@ -1,15 +1,27 @@
+"""
+Pure Pursuit路径跟踪控制器
+
+本模块实现Pure Pursuit控制算法，用于车辆的路径跟踪控制。
+Pure Pursuit是一种几何路径跟踪方法，通过追踪前瞻点实现路径跟踪。
+"""
+
 import numpy as np
 from vehicle_model import BicycleModel
 
 class PurePursuitController:
-    """Pure Pursuit路径跟踪控制器"""
+    """
+    Pure Pursuit路径跟踪控制器
+    
+    该类实现Pure Pursuit算法，通过计算车辆当前位置到前瞻点的
+    几何关系来确定转向角，实现平滑的路径跟踪。
+    """
     def __init__(self, dt=0.1, horizon=8):
         """
         初始化控制器
         
         参数:
-            dt: 采样时间步长
-            horizon: 仅用于兼容，Pure Pursuit不需要预测时域
+            dt (float): 采样时间步长
+            horizon (int): 兼容参数，Pure Pursuit不需要预测时域
         """
         # 基本参数
         self.dt = dt

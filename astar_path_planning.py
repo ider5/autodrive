@@ -1,3 +1,10 @@
+"""
+A*路径规划算法实现
+
+本模块实现A*算法用于自动驾驶车辆的路径规划。
+A*是一种启发式搜索算法，能够找到从起点到终点的最优路径。
+"""
+
 import numpy as np
 import matplotlib.pyplot as plt
 import heapq
@@ -5,15 +12,20 @@ import time
 from matplotlib.patches import Rectangle, Circle, Polygon
 
 class AStar:
-    """A*路径规划算法"""
-    def __init__(self, env, grid_resolution=0.5, safety_distance=0.5):
+    """
+    A*路径规划算法
+    
+    该类实现A*搜索算法，使用网格化地图进行路径规划。
+    算法结合了代价函数和启发式函数，保证找到最优路径。
+    """
+    def __init__(self, env, grid_resolution=0.5, safety_distance=1.5):
         """
         初始化A*路径规划器
         
         参数:
-            env: 环境对象
-            grid_resolution: 栅格分辨率 (m)
-            safety_distance: 与障碍物的安全距离 (m)
+            env: 环境对象，包含道路信息和障碍物
+            grid_resolution (float): 网格分辨率（米）
+            safety_distance (float): 与障碍物的安全距离（米）
         """
         self.env = env  # 环境对象
         self.grid_resolution = grid_resolution  # 栅格分辨率
