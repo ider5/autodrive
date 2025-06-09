@@ -572,68 +572,119 @@ class RRTStar:
         return path
     
     def save_and_show_results(self, path, filename):
-        """保存并显示结果，显示原始路径和平滑路径"""
+        """保存并显示结果，显示原始路径和平滑路径，使用更美观的样式"""
         print("保存路径规划结果...")
         
         fig, ax = plt.subplots(1, 1, figsize=(15, 8))
         
-        # 绘制道路
+        # 1. 绘制道路背景 - 深灰色
         road_rect = Rectangle((0, 0), self.env.road_length, self.env.road_width, 
-                             linewidth=2, edgecolor='black', facecolor='lightgray', alpha=0.3)
+                             linewidth=2, edgecolor='black', facecolor='darkgray', alpha=0.5, zorder=0)
         ax.add_patch(road_rect)
         
-        # 绘制车道线
+        # 2. 绘制车道背景色（交替颜色）
+        lane_colors = ['#f0f0f0', '#e8e8e8', '#f0f0f0']  # 浅灰色交替
+        for i in range(self.env.num_lanes):
+            lane_y_start = i * self.env.lane_width
+            lane_rect = Rectangle((0, lane_y_start), self.env.road_length, self.env.lane_width,
+                                facecolor=lane_colors[i % len(lane_colors)], alpha=0.3, zorder=1)
+            ax.add_patch(lane_rect)
+        
+        # 3. 绘制车道分界线（黄色虚线）
         for i in range(1, self.env.num_lanes):
             lane_y = i * self.env.lane_width
-            ax.plot([0, self.env.road_length], [lane_y, lane_y], 'k--', alpha=0.5, linewidth=1)
+            ax.plot([0, self.env.road_length], [lane_y, lane_y], 'y--', 
+                   linewidth=2, alpha=0.8, zorder=2)
         
-        # 绘制安全距离边界
-        # 下边界安全线
+        # 4. 绘制道路边界线（黄色实线）
+        ax.plot([0, self.env.road_length], [0, 0], 'y-', linewidth=3, alpha=0.9, zorder=2)
+        ax.plot([0, self.env.road_length], [self.env.road_width, self.env.road_width], 
+               'y-', linewidth=3, alpha=0.9, zorder=2)
+        
+        # 5. 绘制安全距离边界（红色虚线）
         lower_safe_boundary = self.safety_distance
-        ax.plot([0, self.env.road_length], [lower_safe_boundary, lower_safe_boundary], 
-                'r--', linewidth=2.0, alpha=0.7, label='安全距离')
-        
-        # 上边界安全线
         upper_safe_boundary = self.env.road_width - self.safety_distance
+        ax.plot([0, self.env.road_length], [lower_safe_boundary, lower_safe_boundary], 
+                'r--', linewidth=2.5, alpha=0.8, label='安全距离', zorder=3)
         ax.plot([0, self.env.road_length], [upper_safe_boundary, upper_safe_boundary], 
-                'r--', linewidth=2.0, alpha=0.7)
+                'r--', linewidth=2.5, alpha=0.8, zorder=3)
         
-        # 绘制障碍物车辆
+        # 6. 绘制车道标签
+        for i in range(self.env.num_lanes):
+            lane_center = (i + 0.5) * self.env.lane_width
+            ax.text(self.env.road_length + 2, lane_center, f'车道 {i+1}', 
+                   ha='left', va='center', fontsize=12, fontweight='bold',
+                   bbox=dict(facecolor='white', edgecolor='black', alpha=0.8, boxstyle='round,pad=0.3'),
+                   zorder=10)
+        
+        # 7. 绘制网格（淡化）
+        ax.grid(True, alpha=0.2, linestyle='-', linewidth=0.5, zorder=1)
+        
+        # 8. 绘制障碍物车辆及其安全距离边界
         if hasattr(self.env, 'obstacle_vehicles'):
             for vehicle in self.env.obstacle_vehicles:
+                # 绘制车辆安全距离边界（红色虚线框）
+                safety_rect = Rectangle(
+                    (vehicle.x - vehicle.length/2 - self.safety_distance, 
+                     vehicle.y - vehicle.width/2 - self.safety_distance),
+                    vehicle.length + 2 * self.safety_distance,
+                    vehicle.width + 2 * self.safety_distance,
+                    fill=False, edgecolor='r', linestyle='--', 
+                    linewidth=2.0, alpha=0.6, zorder=4
+                )
+                ax.add_patch(safety_rect)
+                
+                # 绘制车辆（蓝色）
                 vehicle.draw(ax)
         
-        # 绘制RRT*树（淡化显示）
+        # 9. 绘制RRT*搜索树（绿色，非常淡化）
         for node in self.node_list:
             if node.parent is not None:
-                ax.plot([node.x, node.parent.x], [node.y, node.parent.y], 'c-', alpha=0.2, linewidth=0.3)
+                ax.plot([node.x, node.parent.x], [node.y, node.parent.y], 
+                       'g-', alpha=0.15, linewidth=0.3, zorder=5)
         
-        # 绘制原始路径和平滑路径
-        if hasattr(self, 'raw_path') and self.raw_path:
-            raw_path_array = np.array(self.raw_path)
-            ax.plot(raw_path_array[:, 0], raw_path_array[:, 1], 'b--', linewidth=2, alpha=0.6, label='原始路径')
-        
+        # 10. 绘制规划路径（平滑后的路径）
         if path:
             path_array = np.array(path)
-            ax.plot(path_array[:, 0], path_array[:, 1], 'r-', linewidth=3, label='平滑路径')
+            ax.plot(path_array[:, 0], path_array[:, 1], 'r-', 
+                   linewidth=4, label='规划路径', zorder=8)
             
-            # 标记起点和终点
-            ax.plot(path[0][0], path[0][1], 'go', markersize=10, label='起点')
-            ax.plot(path[-1][0], path[-1][1], 'ro', markersize=10, label='终点')
+            # 11. 标记起点和终点（更大更明显）
+            ax.plot(path[0][0], path[0][1], 'go', markersize=12, 
+                   markeredgecolor='black', markeredgewidth=2, label='起点', zorder=9)
+            ax.plot(path[-1][0], path[-1][1], 'ro', markersize=12, 
+                   markeredgecolor='black', markeredgewidth=2, label='终点', zorder=9)
+            
+            # 添加起点终点文字标注
+            ax.annotate('起点', (path[0][0], path[0][1]), 
+                       xytext=(0, 20), textcoords='offset points', ha='center', 
+                       fontsize=12, fontweight='bold',
+                       bbox=dict(facecolor='white', edgecolor='green', alpha=0.9, boxstyle='round,pad=0.3'),
+                       zorder=10)
+            ax.annotate('终点', (path[-1][0], path[-1][1]), 
+                       xytext=(0, 20), textcoords='offset points', ha='center', 
+                       fontsize=12, fontweight='bold',
+                       bbox=dict(facecolor='white', edgecolor='red', alpha=0.9, boxstyle='round,pad=0.3'),
+                       zorder=10)
         
-        # 设置图形属性
-        ax.set_xlim(-2, self.env.road_length + 2)
+        # 12. 设置图形属性
+        ax.set_xlim(-2, self.env.road_length + 8)  # 右侧留更多空间给车道标签
         ax.set_ylim(-2, self.env.road_width + 2)
-        ax.set_xlabel('X (m)')
-        ax.set_ylabel('Y (m)')
-        ax.set_title(f'RRT* 路径规划结果（安全距离: {self.safety_distance:.1f}m）')
-        ax.legend()
-        ax.grid(True, alpha=0.3)
+        ax.set_xlabel('X (m)', fontsize=14, fontweight='bold')
+        ax.set_ylabel('Y (m)', fontsize=14, fontweight='bold')
+        ax.set_title(f'RRT* 路径规划结果（安全距离: {self.safety_distance:.1f}m）', 
+                    fontsize=16, fontweight='bold')
+        
+        # 13. 设置图例（右上角）
+        legend = ax.legend(loc='upper right', fontsize=12, framealpha=0.9, 
+                          edgecolor='black', fancybox=True, shadow=True)
+        legend.set_zorder(11)
+        
         ax.set_aspect('equal')
         
-        # 保存图片
+        # 14. 保存图片
         plt.tight_layout()
-        plt.savefig(filename, dpi=300, bbox_inches='tight')
+        plt.savefig(filename, dpi=300, bbox_inches='tight', facecolor='white', edgecolor='none')
         plt.show()
         
         print(f"RRT*路径规划结果已保存为 {filename}") 
