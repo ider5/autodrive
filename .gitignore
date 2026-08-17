@@ -72,4 +72,18 @@ Thumbs.db
 # Temporary files
 *.tmp
 *.temp
-*.log 
+*.log
+
+# Generated simulation / visualization outputs
+rrt_path_planning.png
+astar_path_planning.png
+rrt_star_path_planning.png
+simulation_results.png
+vehicle_animation.gif
+road_environment_visualization.png
+road_environment_updated.png
+vehicle_model_visualization.png
+
+# Course slides and other binaries
+*.pptx
+*.ppt

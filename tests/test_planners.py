@@ -3,10 +3,10 @@ import math
 
 import pytest
 
-from environment import Environment
-from astar_path_planning import AStar
-from rrt_path_planning import RRT
-from rrt_star_path_planning import RRTStar
+from autodrive.environment import Environment
+from autodrive.planning.astar import AStar
+from autodrive.planning.rrt import RRT
+from autodrive.planning.rrt_star import RRTStar
 
 
 ZIGZAG = [

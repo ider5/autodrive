@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from vehicle_model import BicycleModel
+from autodrive.vehicle import BicycleModel
 
 
 def test_bicycle_model_constructor_defaults():

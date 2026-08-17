@@ -1,9 +1,9 @@
 import pytest
 
+from autodrive.control.mpc import MPCController
 from autodrive.control.protocol import Controller
-from mpc_controller import MPCController
-from pure_pursuit_controller import CompatibleController
-from stanley_controller import CompatibleStanleyController
+from autodrive.control.pure_pursuit import CompatibleController
+from autodrive.control.stanley import CompatibleStanleyController
 
 
 @pytest.mark.parametrize(
