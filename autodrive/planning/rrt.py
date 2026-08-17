@@ -6,10 +6,11 @@ RRT路径规划算法实现
 """
 
 import numpy as np
-import matplotlib.pyplot as plt
 import random
 import time
 from matplotlib.patches import Rectangle, Circle, Polygon
+
+from .plotting import save_rrt_results
 
 class RRT:
     """
@@ -648,51 +649,9 @@ class RRT:
         
         return result_path
     
-    def save_and_show_results(self, path, smooth_path, filename):
+    def save_and_show_results(self, path, smooth_path, filename, show=True):
         """保存并显示路径规划结果"""
-        plt.figure(figsize=(12, 6))
-        
-        # 绘制环境
-        ax = plt.gca()
-        self.env.plot_environment(ax)
-        
-        # 绘制安全距离边界
-        self._plot_safety_boundaries(ax)
-        
-        # 绘制RRT树
-        for node in self.node_list:
-            if node.parent:
-                plt.plot(node.path_x, node.path_y, '-g', alpha=0.3)
-        
-        # 绘制原始路径
-        if path:
-            path_x = [p[0] for p in path]
-            path_y = [p[1] for p in path]
-            plt.plot(path_x, path_y, 'b--', linewidth=2, label='原始路径')
-        
-        # 绘制平滑路径
-        if smooth_path:
-            smooth_path_x = [p[0] for p in smooth_path]
-            smooth_path_y = [p[1] for p in smooth_path]
-            plt.plot(smooth_path_x, smooth_path_y, 'r-', linewidth=2, label='平滑路径')
-        
-        # 添加起点和终点标记
-        if path:
-            plt.plot(path[0][0], path[0][1], 'go', markersize=10, label='起点')
-            plt.plot(path[-1][0], path[-1][1], 'ro', markersize=10, label='终点')
-        
-        # 添加图例和标题
-        plt.legend()
-        plt.title(f'RRT路径规划结果 (安全距离: {self.safety_distance:.1f}m)')
-        plt.axis('equal')
-        plt.grid(True)
-        
-        # 保存图像
-        plt.savefig(filename, dpi=100, bbox_inches='tight')
-        print(f"路径规划结果已保存为 {filename}")
-        
-        # 关闭图形（不显示）
-        plt.close()
+        save_rrt_results(self, path, smooth_path, filename, show=show)
     
     def _plot_safety_boundaries(self, ax):
         """绘制安全距离边界线"""

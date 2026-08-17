@@ -6,10 +6,11 @@ A*是一种启发式搜索算法，能够找到从起点到终点的最优路径
 """
 
 import numpy as np
-import matplotlib.pyplot as plt
 import heapq
 import time
 from matplotlib.patches import Rectangle, Circle, Polygon
+
+from .plotting import save_astar_results
 
 class AStar:
     """
@@ -462,82 +463,6 @@ class AStar:
         
         return constrained_path
     
-    def save_and_show_results(self, path, smooth_path, filename):
+    def save_and_show_results(self, path, smooth_path, filename, show=True):
         """保存并显示路径规划结果"""
-        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(20, 8))
-        
-        # 左图：显示栅格地图和原始路径
-        ax1.set_title('A*路径规划 - 栅格地图', fontsize=14, fontweight='bold')
-        
-        # 绘制栅格地图
-        ax1.imshow(self.grid_map, cmap='binary', origin='lower', 
-                  extent=[self.x_min, self.x_max, self.y_min, self.y_max])
-        
-        # 绘制原始路径
-        if path:
-            path_x = [p[0] for p in path]
-            path_y = [p[1] for p in path]
-            ax1.plot(path_x, path_y, 'r-', linewidth=2, label='A*原始路径')
-        
-        # 绘制起点和终点
-        start_point = self.env.start_point
-        end_point = self.env.end_point
-        ax1.plot(start_point[0], start_point[1], 'go', markersize=10, label='起点')
-        ax1.plot(end_point[0], end_point[1], 'ro', markersize=10, label='终点')
-        
-        ax1.set_xlabel('X (m)')
-        ax1.set_ylabel('Y (m)')
-        ax1.legend()
-        ax1.grid(True, alpha=0.3)
-        ax1.set_aspect('equal')
-        
-        # 右图：显示环境和平滑路径
-        ax2.set_title('A*路径规划 - 车道约束路径', fontsize=14, fontweight='bold')
-        self.env.plot_environment(ax2)
-        
-        # 绘制车道中心线和约束范围
-        for i, center in enumerate(self.lane_centers):
-            # 绘制车道中心线
-            ax2.axhline(y=center, color='yellow', linestyle='-', linewidth=2, alpha=0.8, 
-                       label=f'车道{i+1}中心' if i == 0 else "")
-            
-            # 绘制允许的偏离范围
-            ax2.axhline(y=center + self.max_lane_deviation, color='orange', 
-                       linestyle=':', alpha=0.5)
-            ax2.axhline(y=center - self.max_lane_deviation, color='orange', 
-                       linestyle=':', alpha=0.5)
-            
-            # 填充允许的车道范围
-            ax2.fill_between([0, self.env.road_length], 
-                           center - self.max_lane_deviation, 
-                           center + self.max_lane_deviation, 
-                           alpha=0.1, color='green', label='允许范围' if i == 0 else "")
-        
-        # 绘制原始路径和平滑路径
-        if path:
-            path_x = [p[0] for p in path]
-            path_y = [p[1] for p in path]
-            ax2.plot(path_x, path_y, '--', color='red', linewidth=1.5, 
-                    label='A*原始路径', alpha=0.7)
-        
-        if smooth_path:
-            smooth_x = [p[0] for p in smooth_path]
-            smooth_y = [p[1] for p in smooth_path]
-            ax2.plot(smooth_x, smooth_y, '-', color='blue', linewidth=3, 
-                    label='A*车道约束路径')
-        
-        # 添加参数说明
-        param_text = f"车道偏离限制: {self.max_lane_deviation:.2f}m\n变道角度限制: {np.rad2deg(self.lane_change_angle_limit):.1f}°"
-        ax2.text(0.02, 0.98, param_text, transform=ax2.transAxes, 
-                fontsize=10, verticalalignment='top',
-                bbox=dict(boxstyle='round', facecolor='white', alpha=0.8))
-        
-        ax2.set_xlabel('X (m)')
-        ax2.set_ylabel('Y (m)')
-        ax2.legend()
-        ax2.grid(True, alpha=0.3)
-        
-        plt.tight_layout()
-        plt.savefig(filename, dpi=150, bbox_inches='tight')
-        print(f"A*路径规划结果已保存为 {filename}")
-        plt.close() 
+        save_astar_results(self, path, smooth_path, filename, show=show)
