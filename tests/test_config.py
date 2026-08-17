@@ -123,3 +123,21 @@ def test_bicycle_model_uses_vehicle_config_with_dt_argument_precedence():
     assert configured_vehicle.max_v == 3.0
     assert configured_vehicle.dt == 0.2
     assert BicycleModel().max_v == 7.0
+
+
+def test_bicycle_model_uses_configured_high_speed_accel_threshold():
+    default_vehicle = BicycleModel(v=0.0)
+    configured_vehicle = BicycleModel(
+        v=0.0,
+        config=VehicleConfig(high_speed_accel_threshold=10.0),
+    )
+    for vehicle in (default_vehicle, configured_vehicle):
+        for _ in range(19):
+            vehicle.update(vehicle.max_a, 0.0)
+        vehicle.set_state(0.0, 0.0, 0.0, 6.0)
+
+    default_vehicle.update(default_vehicle.max_a, 0.0)
+    configured_vehicle.update(configured_vehicle.max_a, 0.0)
+
+    assert default_vehicle.a == 1.275
+    assert configured_vehicle.a == configured_vehicle.max_a

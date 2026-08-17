@@ -68,6 +68,7 @@ class BicycleModel:
         self.min_v = config.min_v
         self.max_a = config.max_a
         self.max_delta_dot = np.deg2rad(config.max_delta_dot_deg)
+        self.high_speed_accel_threshold = config.high_speed_accel_threshold
         
         # 上一次的转向角，用于限制转向角变化率
         self.prev_delta = 0.0
@@ -109,8 +110,10 @@ class BicycleModel:
         
         # 新增: 基于当前速度自适应调整加速度限制
         # 高速时减小可用加速度，提高安全性
-        if self.v > 5.0:  # 高速区域
-            speed_factor = 1.0 - 0.3 * min(1.0, (self.v - 5.0) / 2.0)  # 速度越高，可用加速度越小
+        if self.v > self.high_speed_accel_threshold:  # 高速区域
+            speed_factor = 1.0 - 0.3 * min(
+                1.0, (self.v - self.high_speed_accel_threshold) / 2.0
+            )  # 速度越高，可用加速度越小
             a = np.clip(a, -self.max_a * speed_factor, self.max_a * speed_factor)
         
         # 更新状态 (自行车模型的运动学方程)
