@@ -71,7 +71,7 @@ python main.py --seed 42
 
 2. **控制器类型**：
    - 1：Pure Pursuit (纯跟踪控制器)
-   - 2：MPC（菜单沿用原名称，当前实现是已有的几何路径跟踪器）
+   - 2：MPC (模型预测控制器)
    - 3：Stanley (Stanley路径跟踪控制器，推荐)
 
 ## 算法说明
