@@ -14,17 +14,18 @@
 
 ```
 自动驾驶仿真系统
-├── 环境模块 (environment.py)
-├── 车辆模型 (vehicle_model.py)  
-├── 路径规划
-│   ├── RRT算法 (rrt_path_planning.py)
-│   ├── A*算法 (astar_path_planning.py)
-│   └── RRT*算法 (rrt_star_path_planning.py)
-├── 控制器
-│   ├── Pure Pursuit (pure_pursuit_controller.py)
-│   ├── MPC控制器 (mpc_controller.py)
-│   └── Stanley控制器 (stanley_controller.py)
-└── 主程序 (main.py)
+├── main.py                     # 精简命令行入口
+├── 根目录兼容层                 # 保留旧模块导入路径
+├── autodrive/
+│   ├── config.py               # 参数配置
+│   ├── environment.py          # 仿真环境
+│   ├── vehicle.py              # 车辆模型
+│   ├── i18n.py                 # 界面文字与字体支持
+│   ├── planning/               # 路径规划
+│   ├── control/                # 路径跟踪控制
+│   ├── simulation/             # 仿真会话、循环与输出
+│   └── viz/                    # 可视化
+└── tests/                      # 自动化测试
 ```
 
 ## 安装依赖
@@ -38,6 +39,12 @@ pip install -r requirements.txt
 - numpy: 数值计算
 - matplotlib: 绘图和可视化
 - scipy: 科学计算和优化
+
+开发和测试依赖可通过以下命令安装：
+
+```bash
+pip install -r requirements-dev.txt
+```
 
 ## 使用方法
 
@@ -58,14 +65,14 @@ python main.py --seed 42
 运行程序后，系统会提示选择：
 
 1. **路径规划算法**：
-   - RRT (快速随机树)
-   - A* (A星算法)  
-   - RRT* (优化随机树)
+   - 1：RRT (快速随机树)
+   - 2：A* (A星算法)
+   - 3：RRT* (优化随机树)
 
 2. **控制器类型**：
-   - Pure Pursuit (纯跟踪控制器)
-   - MPC (模型预测控制器)
-   - Stanley (Stanley路径跟踪控制器)
+   - 1：Pure Pursuit (纯跟踪控制器)
+   - 2：MPC (模型预测控制器)
+   - 3：Stanley (Stanley路径跟踪控制器，推荐)
 
 ## 算法说明
 
@@ -78,7 +85,7 @@ python main.py --seed 42
 ### 控制器
 
 - **Pure Pursuit**：几何路径跟踪方法，通过追踪前瞻点实现控制
-- **MPC**：模型预测控制，通过优化未来控制序列实现精确跟踪
+- **MPC**：菜单沿用原名称，当前实现是已有的几何路径跟踪器
 - **Stanley**：结合横向误差和朝向误差的高精度控制器
 
 ## 仿真环境
@@ -100,18 +107,34 @@ python main.py --seed 42
 ## 项目结构
 
 ```
-├── main.py                 # 主程序入口
-├── environment.py          # 仿真环境
-├── vehicle_model.py        # 车辆动力学模型
-├── rrt_path_planning.py    # RRT路径规划
-├── astar_path_planning.py  # A*路径规划  
-├── rrt_star_path_planning.py # RRT*路径规划
-├── pure_pursuit_controller.py # Pure Pursuit控制器
-├── mpc_controller.py       # MPC控制器
-├── stanley_controller.py   # Stanley控制器
-├── font_support.py         # 字体支持
-├── requirements.txt        # 依赖包列表
-└── README.md              # 项目说明
+├── main.py                         # 精简命令行入口
+├── environment.py                  # 兼容层
+├── vehicle_model.py                # 兼容层
+├── font_support.py                 # 兼容层
+├── rrt_path_planning.py            # RRT兼容层
+├── astar_path_planning.py          # A*兼容层
+├── rrt_star_path_planning.py       # RRT*兼容层
+├── pure_pursuit_controller.py      # Pure Pursuit兼容层
+├── mpc_controller.py               # MPC兼容层
+├── stanley_controller.py           # Stanley兼容层
+├── visualize_vehicle_model.py      # 车辆模型可视化入口
+├── visualize_road_environment.py   # 道路环境可视化入口
+├── visualize_road_environment_accurate.py # 精确道路环境可视化入口
+├── autodrive/
+│   ├── config.py
+│   ├── environment.py
+│   ├── vehicle.py
+│   ├── i18n.py
+│   ├── planning/
+│   ├── control/
+│   ├── simulation/
+│   └── viz/
+├── tests/                           # pytest测试
+├── requirements.txt                # 运行依赖
+├── requirements-dev.txt            # 开发与pytest依赖
+├── pyproject.toml                   # 项目与pytest配置
+├── LICENSE                          # MIT许可证
+└── README.md                        # 项目说明
 ```
 
 ## 参数配置
@@ -134,7 +157,7 @@ python main.py --seed 42
 1. 首次运行可能需要安装字体支持
 2. 仿真过程中请勿关闭matplotlib窗口
 3. 结果图片会保存在当前目录下
-4. 建议在Python 3.7+环境下运行
+4. 需要Python 3.9+环境
 
 ## 贡献指南
 
