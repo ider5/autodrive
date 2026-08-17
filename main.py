@@ -6,6 +6,7 @@ import random
 import numpy as np
 
 from autodrive import i18n
+from autodrive.i18n import set_chinese_font, use_english_labels
 from autodrive.simulation.session import run_session
 
 
@@ -49,9 +50,9 @@ def main():
         except ValueError:
             print("请输入有效的数字 1、2 或 3")
 
-    i18n.set_chinese_font()
+    set_chinese_font()
     if i18n.labels is None:
-        i18n.use_english_labels()
+        use_english_labels()
 
     run_session(planning_choice, controller_choice)
 
