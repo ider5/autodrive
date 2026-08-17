@@ -9,6 +9,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
 
+from autodrive.config import VehicleConfig
+
+
 class BicycleModel:
     """
     车辆动力学仿真的自行车模型
@@ -26,7 +29,9 @@ class BicycleModel:
         wheelbase (float): 前后轴距离
         dt (float): 数值积分时间步长
     """
-    def __init__(self, x=0.0, y=0.0, yaw=0.0, v=0.0, dt=0.1):
+    def __init__(
+        self, x=0.0, y=0.0, yaw=0.0, v=0.0, dt=0.1, config=None
+    ):
         """
         初始化自行车模型
         
@@ -37,12 +42,16 @@ class BicycleModel:
             v (float): 初始速度（米/秒）
             dt (float): 积分时间步长
         """
+        if config is None:
+            config = VehicleConfig()
+        self.config = config
+
         # 车辆参数
-        self.L = 2.0  # 轴距 (m)
-        self.max_steer = np.deg2rad(20.0)  # 降低最大转向角 (rad)，从30度降低到20度
+        self.L = config.wheelbase  # 轴距 (m)
+        self.max_steer = np.deg2rad(config.max_steer_deg)
         self.dt = dt  # 时间步长，恢复为0.1秒
-        self.width = 1.8  # 车宽 (m)
-        self.length = 4.0  # 车长 (m)
+        self.width = config.width  # 车宽 (m)
+        self.length = config.length  # 车长 (m)
         
         # 车辆状态 [x, y, yaw, v]
         self.x = x  # 位置x
@@ -55,17 +64,17 @@ class BicycleModel:
         self.a = 0.0  # 加速度
         
         # 车辆运动限制
-        self.max_v = 7.0  # 最大速度 (m/s)，从8.0降低到7.0
-        self.min_v = 0.0  # 最小速度 (m/s)
-        self.max_a = 1.5  # 最大加速度 (m/s^2)，从2.0降低到1.5
-        self.max_delta_dot = np.deg2rad(12.0)  # 最大转向角速度 (rad/s)，从15度/秒降低到12度/秒
+        self.max_v = config.max_v
+        self.min_v = config.min_v
+        self.max_a = config.max_a
+        self.max_delta_dot = np.deg2rad(config.max_delta_dot_deg)
         
         # 上一次的转向角，用于限制转向角变化率
         self.prev_delta = 0.0
         
         # 新增: 上一次的加速度，用于限制加速度变化率
         self.prev_a = 0.0
-        self.max_jerk = 0.8  # 最大加加速度(jerk) (m/s^3)
+        self.max_jerk = config.max_jerk  # 最大加加速度(jerk) (m/s^3)
     
     def set_state(self, x, y, yaw, v):
         """设置车辆状态"""

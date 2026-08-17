@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 from matplotlib.patches import Rectangle, Polygon
 from autodrive import i18n
+from autodrive.config import ScenarioConfig
 from autodrive.i18n import set_chinese_font
 import random
 
@@ -82,43 +83,51 @@ class Environment:
         obstacle_vehicles (list): 静态障碍车辆列表
     """
     
-    def __init__(self):
+    def __init__(self, config=None):
         """
         初始化道路环境
         
         建立三车道道路，设置预定义尺寸并在关键位置放置障碍车辆
         """
+        if config is None:
+            config = ScenarioConfig()
+        self.config = config
+
         # 设置中文字体
         set_chinese_font()
         
-        # 道路参数 - 调整长度以更接近图片比例
-        self.road_length = 85.0  # 道路长度 (m)，从100米缩减到85米，保持比例
+        # 道路参数
+        self.road_length = config.road_length
         
-        # 车辆参数 - 与vehicle_model.py保持一致
-        self.vehicle_length = 4.0  # 车长 (m)
-        self.vehicle_width = 1.8   # 车宽 (m)，与vehicle_model.py一致
+        # 车辆参数
+        self.vehicle_length = config.vehicle.length
+        self.vehicle_width = config.vehicle.width
         
-        # 车道宽度设置为车宽的2.2倍
-        self.lane_width = self.vehicle_width * 2.2  # 车道宽度 (m)，从2.5倍减少到2.2倍
-        self.num_lanes = 3        # 车道数量
+        # 车道参数
+        self.lane_width = (
+            self.vehicle_width * config.lane_width_over_vehicle_width
+        )
+        self.num_lanes = config.num_lanes
         self.road_width = self.lane_width * self.num_lanes  # 道路总宽度
         
-        # 获取车道中心位置 - 交换车道编号：最上面的车道为道路3，最下面的车道为道路1
-        # 修正车道编号和中心计算
-        lane1_center = self.get_lane_center(1)  # 第一车道中心（最下方车道）
-        lane2_center = self.get_lane_center(2)  # 第二车道中心（中间车道）
-        lane3_center = self.get_lane_center(3)  # 第三车道中心（最上方车道）
+        # 定义起点和终点位置
+        self.start_point = np.array(
+            [config.start_x, self.get_lane_center(config.start_lane)]
+        )
+        self.end_point = np.array(
+            [config.end_x, self.get_lane_center(config.end_lane)]
+        )
         
-        # 定义起点和终点位置 - 根据用户要求：起点在上方车道，终点在下方车道
-        self.start_point = np.array([9.71, lane3_center])   # 起点在第三车道（最上方）左侧
-        self.end_point = np.array([80.0, lane1_center])    # 终点在第一车道（最下方）右侧，X坐标向右移至80m
-        
-        # 使用固定的障碍车辆位置 - 更新布局以符合新的起点终点设置
+        # 创建障碍车辆
         self.obstacle_vehicles = [
-            ObstacleVehicle(25.0, lane3_center, self.vehicle_length, self.vehicle_width, 0.0),  # 第三车道（上方）- 起点车道障碍物
-            ObstacleVehicle(48.27, lane2_center, self.vehicle_length, self.vehicle_width, 0.0),  # 第二车道（中间）
-            ObstacleVehicle(48.27, lane1_center, self.vehicle_length, self.vehicle_width, 0.0),  # 第一车道（下方）- 终点车道障碍物
-            ObstacleVehicle(60.0, lane1_center, self.vehicle_length, self.vehicle_width, 0.0)   # 第一车道（下方）靠近终点
+            ObstacleVehicle(
+                spec.x,
+                self.get_lane_center(spec.lane_id),
+                self.vehicle_length,
+                self.vehicle_width,
+                0.0,
+            )
+            for spec in config.obstacles
         ]
         
         # 为起点和终点创建车辆表示
@@ -128,7 +137,11 @@ class Environment:
                                   self.vehicle_length, self.vehicle_width, 0.0)
         
         # 车道颜色
-        self.lane_colors = ['#f0f0f0', '#e8e8e8', '#f0f0f0']  # 为每条车道设置不同的底色
+        default_lane_colors = ['#f0f0f0', '#e8e8e8', '#f0f0f0']
+        self.lane_colors = [
+            default_lane_colors[index % len(default_lane_colors)]
+            for index in range(self.num_lanes)
+        ]
     
     def _get_lane_id(self, y):
         """根据y坐标获取车道ID（0-based索引）"""
