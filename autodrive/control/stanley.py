@@ -94,6 +94,9 @@ class StanleyController:
 
         p1 = self.path[path_idx]
         p2 = self.path[path_idx + 1]
+        if np.hypot(p2[0] - p1[0], p2[1] - p1[1]) < 1e-6:
+            return 0.0, 0.0
+
         cross_track_error = signed_cross_track(
             [vehicle.x, vehicle.y], p1, p2
         )
