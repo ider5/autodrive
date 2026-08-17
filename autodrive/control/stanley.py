@@ -6,7 +6,13 @@ Stanley控制器结合横向误差和朝向误差，具有良好的路径跟踪�
 """
 
 import numpy as np
-from autodrive.vehicle import BicycleModel
+
+from autodrive.control.geometry import (
+    nearest_index,
+    path_yaw,
+    signed_cross_track,
+    wrap_angle,
+)
 
 class StanleyController:
     """
@@ -75,58 +81,27 @@ class StanleyController:
         """找到路径上距离车辆最近的点"""
         if self.path is None or len(self.path) < 2:
             return None, 0, 0
-            
-        min_dist = float('inf')
-        min_idx = 0
-        
-        # 找到最近的路径点
-        for i, point in enumerate(self.path):
-            dist = np.hypot(point[0] - vehicle.x, point[1] - vehicle.y)
-            if dist < min_dist:
-                min_dist = dist
-                min_idx = i
-                
+
+        min_idx = nearest_index(self.path, vehicle.x, vehicle.y)
+        point = self.path[min_idx]
+        min_dist = np.hypot(point[0] - vehicle.x, point[1] - vehicle.y)
         return self.path[min_idx], min_idx, min_dist
         
     def _calculate_cross_track_error(self, vehicle, nearest_point, path_idx):
         """计算横向跟踪误差（Cross Track Error）"""
         if path_idx >= len(self.path) - 1:
             return 0.0, 0.0
-            
-        # 获取路径段
-        p1 = np.array(self.path[path_idx])
-        p2 = np.array(self.path[path_idx + 1])
-        
-        # 车辆位置
-        vehicle_pos = np.array([vehicle.x, vehicle.y])
-        
-        # 路径方向向量
-        path_vector = p2 - p1
-        path_length = np.linalg.norm(path_vector)
-        
-        if path_length < 1e-6:
-            return 0.0, 0.0
-            
-        # 单位路径方向向量
-        path_unit = path_vector / path_length
-        
-        # 车辆到路径起点的向量
-        vehicle_to_path = vehicle_pos - p1
-        
-        # 计算横向误差（垂直距离）
-        cross_track_error = np.cross(vehicle_to_path, path_unit)
-        
-        # 路径朝向角
-        path_yaw = np.arctan2(path_vector[1], path_vector[0])
-        
-        return cross_track_error, path_yaw
+
+        p1 = self.path[path_idx]
+        p2 = self.path[path_idx + 1]
+        cross_track_error = signed_cross_track(
+            [vehicle.x, vehicle.y], p1, p2
+        )
+        return cross_track_error, path_yaw(p1, p2)
         
     def _calculate_heading_error(self, vehicle_yaw, path_yaw):
         """计算朝向误差"""
-        heading_error = path_yaw - vehicle_yaw
-        # 角度归一化到[-π, π]
-        heading_error = np.arctan2(np.sin(heading_error), np.cos(heading_error))
-        return heading_error
+        return wrap_angle(path_yaw - vehicle_yaw)
         
     def _stanley_steering_control(self, vehicle):
         """Stanley转向控制算法"""
@@ -236,24 +211,3 @@ class CompatibleStanleyController(StanleyController):
     def calculate_steering(self, vehicle, path, road_width=None):
         """保持与现有控制器相同的接口"""
         return super().calculate_steering(vehicle, path, road_width)
-
-
-# 向后兼容的车辆模型类（用于独立测试）
-class VehicleModel:
-    """简化的车辆模型类，用于兼容性"""
-    
-    def __init__(self, dt=0.1):
-        self.dt = dt
-        self.x = 0.0
-        self.y = 0.0
-        self.yaw = 0.0
-        self.v = 0.0
-        self.width = 1.8
-        self.length = 4.0
-        
-    def update(self, x, y, yaw, v, delta, a=0.0):
-        """更新车辆状态"""
-        self.x = x
-        self.y = y
-        self.yaw = yaw
-        self.v = v 

@@ -1,6 +1,6 @@
 import pytest
+import scipy.optimize as scipy_optimize
 
-import mpc_controller
 from environment import Environment
 from mpc_controller import MPCController
 from pure_pursuit_controller import CompatibleController
@@ -196,8 +196,7 @@ def test_mpc_on_path_control_does_not_call_scipy_optimize(
     def fail_if_called(*args, **kwargs):
         pytest.fail("The active MPC control path must remain geometric")
 
-    monkeypatch.setattr(mpc_controller.opt, "minimize", fail_if_called)
-    monkeypatch.setattr(mpc_controller, "minimize", fail_if_called)
+    monkeypatch.setattr(scipy_optimize, "minimize", fail_if_called)
     env = Environment()
     controller = _controller("mpc")
     controller.set_path(PATH)

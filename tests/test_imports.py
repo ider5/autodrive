@@ -1,4 +1,7 @@
 import font_support
+import mpc_controller
+import pure_pursuit_controller
+import stanley_controller
 
 from astar_path_planning import AStar as ShimAStar
 from environment import Environment as ShimEnvironment
@@ -38,3 +41,14 @@ def test_font_support_exposes_live_package_labels():
     labels = use_english_labels()
     assert labels is i18n.labels
     assert font_support.labels is i18n.labels
+
+
+def test_controller_shims_do_not_export_local_vehicle_models():
+    assert not hasattr(mpc_controller, "VehicleModel")
+    assert not hasattr(pure_pursuit_controller, "VehicleModel")
+    assert not hasattr(stanley_controller, "VehicleModel")
+
+
+def test_mpc_shim_does_not_export_dead_optimizer_symbols():
+    assert not hasattr(mpc_controller, "minimize")
+    assert not hasattr(mpc_controller, "opt")

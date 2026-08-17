@@ -6,7 +6,8 @@ Pure Pursuit是一种几何路径跟踪方法，通过追踪前瞻点实现路�
 """
 
 import numpy as np
-from autodrive.vehicle import BicycleModel
+
+from autodrive.control.geometry import nearest_index
 
 class PurePursuitController:
     """
@@ -87,15 +88,9 @@ class PurePursuitController:
         
     def _get_nearest_point(self, x, y, points):
         """获取距离当前位置最近的路径点"""
-        min_dist = float('inf')
-        min_idx = 0
-        
-        for i, (px, py) in enumerate(points):
-            dist = np.hypot(px - x, py - y)
-            if dist < min_dist:
-                min_dist = dist
-                min_idx = i
-                
+        min_idx = nearest_index(points, x, y)
+        px, py = points[min_idx]
+        min_dist = np.hypot(px - x, py - y)
         return min_idx, min_dist
     
     def calculate_steering(self, vehicle, path, road_width=None):
@@ -337,21 +332,4 @@ class CompatibleController(PurePursuitController):
             
         # 调用父类方法
         return super().calculate_steering(vehicle, self.path or path, road_width)
-
-# 兼容性类 - 用于test_mpc.py文件
-class VehicleModel:
-    """兼容test_mpc.py的车辆模型封装"""
-    def __init__(self, dt=0.1):
-        self.dt = dt
-        # 使用自行车模型作为内部模型
-        self.bicycle_model = BicycleModel()
-        self.bicycle_model.dt = dt
-        
-    def update(self, x, y, yaw, v, delta, a=0.0):
-        """更新车辆状态"""
-        # 设置初始状态
-        self.bicycle_model.set_state(x, y, yaw, v)
-        # 更新状态
-        new_x, new_y, new_yaw, new_v = self.bicycle_model.update(a, delta)
-        return new_x, new_y, new_yaw
 
