@@ -8,6 +8,10 @@ from stanley_controller import CompatibleStanleyController
 from vehicle_model import BicycleModel
 
 
+pytestmark = pytest.mark.filterwarnings(
+    "ignore:Arrays of 2-dimensional vectors are deprecated:DeprecationWarning"
+)
+
 lane2 = Environment().get_lane_center(2)  # 1.5 * 3.96
 PATH = [[float(x), float(lane2)] for x in range(0, 81, 2)]
 
@@ -30,9 +34,9 @@ def _controller(controller_name):
 @pytest.mark.parametrize(
     ("controller_name", "expected"),
     [
-        ("pure_pursuit", (999.0, 999.0)),
-        ("mpc", (999.0, 999.0)),
-        ("stanley", (999.0, 999.0)),
+        ("pure_pursuit", (0.0, 1.02)),
+        ("mpc", (0.0, 0.5)),
+        ("stanley", (0.0, 0.29999999999999993)),
     ],
 )
 def test_controller_output_on_path_at_mid_speed(
@@ -51,9 +55,9 @@ def test_controller_output_on_path_at_mid_speed(
 @pytest.mark.parametrize(
     ("controller_name", "expected"),
     [
-        ("pure_pursuit", (999.0, 999.0)),
-        ("mpc", (999.0, 999.0)),
-        ("stanley", (999.0, 999.0)),
+        ("pure_pursuit", (-0.14497866312686414, 0.5492307692307693)),
+        ("mpc", (0.08821898549276957, 0.5)),
+        ("stanley", (-0.0074984380856760475, 0.29999999999999993)),
     ],
 )
 def test_controller_output_with_lateral_offset(
@@ -74,9 +78,9 @@ def test_controller_output_with_lateral_offset(
 @pytest.mark.parametrize(
     ("controller_name", "expected"),
     [
-        ("pure_pursuit", (999.0, 999.0)),
-        ("mpc", (999.0, 999.0)),
-        ("stanley", (999.0, 999.0)),
+        ("pure_pursuit", (0.0, 0.0)),
+        ("mpc", (0.0, 0.8)),
+        ("stanley", (0.0, 0.0)),
     ],
 )
 def test_controller_output_with_empty_path(controller_name, expected, capsys):
@@ -93,9 +97,9 @@ def test_controller_output_with_empty_path(controller_name, expected, capsys):
 @pytest.mark.parametrize(
     ("controller_name", "expected"),
     [
-        ("pure_pursuit", (999.0, 999.0)),
-        ("mpc", (999.0, 999.0)),
-        ("stanley", (999.0, 999.0)),
+        ("pure_pursuit", (0.0, 0.0)),
+        ("mpc", (0.0, 0.8)),
+        ("stanley", (0.0, 0.0)),
     ],
 )
 def test_controller_output_with_one_point_path(
@@ -124,7 +128,9 @@ def test_stanley_boundary_protection_output(capsys):
 
     captured = capsys.readouterr()
     assert "边界保护" in captured.out
-    assert actual == pytest.approx((999.0, 999.0), abs=1e-10)
+    assert actual == pytest.approx(
+        (-0.10471975511965978, 0.29999999999999993), abs=1e-10
+    )
 
 
 def test_pure_pursuit_near_boundary_output(capsys):
@@ -138,7 +144,9 @@ def test_pure_pursuit_near_boundary_output(capsys):
     )
 
     capsys.readouterr()
-    assert actual == pytest.approx((999.0, 999.0), abs=1e-10)
+    assert actual == pytest.approx(
+        (-0.17453292519943295, -0.8999999999999999), abs=1e-10
+    )
 
 
 def test_mpc_hardcoded_upper_boundary_output(capsys):
@@ -152,7 +160,7 @@ def test_mpc_hardcoded_upper_boundary_output(capsys):
     )
 
     capsys.readouterr()
-    assert actual == pytest.approx((999.0, 999.0), abs=1e-10)
+    assert actual == pytest.approx((-0.2181661564992912, 0.5), abs=1e-10)
 
 
 def test_stanley_target_speed_is_capped_at_maximum(capsys):
