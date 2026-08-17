@@ -17,6 +17,7 @@ def create_animation(
     v_history,
     safety_distance=1.5,
     *,
+    dt=0.1,
     show=True,
     animate=True,
     filename="vehicle_animation.gif",
@@ -132,7 +133,7 @@ def create_animation(
         y = y_history[index]
         yaw = yaw_history[index]
         speed = v_history[index]
-        time = index * 0.1
+        time = index * dt
         update_car_position(car, x, y, yaw)
 
         if index > 0:
@@ -165,7 +166,7 @@ def create_animation(
             f"{speed_label}: {speed:.2f}m/s\n"
             f"{distance_label}: {distance:.1f}m"
         )
-        total_time = len(x_history) * 0.1
+        total_time = len(x_history) * dt
         progress = time / total_time
         progress_bar.set_width((env.road_length - 20) * progress)
         return (

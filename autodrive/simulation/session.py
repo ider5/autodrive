@@ -64,19 +64,19 @@ def _create_controller(controller_choice, vehicle):
         print("使用Pure Pursuit控制器")
         config = PurePursuitConfig()
         controller = CompatibleController(
-            dt=config.dt, horizon=config.horizon
+            dt=vehicle.dt, horizon=config.horizon
         )
         controller_name = "Pure Pursuit"
     elif controller_choice == 2:
         print("使用MPC (模型预测控制)控制器")
         config = MPCConfig()
-        controller = MPCController(dt=config.dt, horizon=config.horizon)
+        controller = MPCController(dt=vehicle.dt, horizon=config.horizon)
         controller_name = "MPC"
     else:
         print("使用Stanley路径跟踪控制器")
         config = StanleyConfig()
         controller = CompatibleStanleyController(
-            dt=config.dt, horizon=config.horizon
+            dt=vehicle.dt, horizon=config.horizon
         )
         controller_name = "Stanley"
     return controller, controller_name
@@ -126,9 +126,11 @@ def run_session(
 
     print("保存路径规划结果...")
     if planning_choice == 3:
-        planner.save_and_show_results(path, filename)
+        planner.save_and_show_results(path, filename, show=show)
     else:
-        planner.save_and_show_results(path, smooth_path, filename)
+        planner.save_and_show_results(
+            path, smooth_path, filename, show=show
+        )
 
     vehicle = BicycleModel(dt=simulation_config.dt)
     vehicle.width = env.vehicle_width

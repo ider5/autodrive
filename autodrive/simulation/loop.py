@@ -159,6 +159,7 @@ def run_simulation(
             yaw_history,
             v_history,
             planner_safety_distance,
+            dt=dt,
             show=show,
         )
 

@@ -82,6 +82,26 @@ def test_rrt_star_save_results_does_not_require_a_smooth_path_argument():
     assert "smooth_path" not in parameters
 
 
+def test_rrt_star_planning_keeps_smooth_path_callable(rrt_star, env, capsys):
+    rrt_star.max_iter = 1
+    rrt_star.goal_sample_rate = 100
+    start = [10.0, env.get_lane_center(2)]
+    goal = [12.0, env.get_lane_center(2)]
+
+    result = rrt_star.planning(*start, *goal)
+    capsys.readouterr()
+
+    assert result == rrt_star.smoothed_path
+    assert rrt_star.raw_path[0] == start
+    assert callable(rrt_star.smooth_path)
+
+
+def test_rrt_star_smoothed_path_storage_does_not_replace_method(rrt_star):
+    rrt_star.smoothed_path = [[0, 0], [1, 1]]
+
+    assert callable(rrt_star.smooth_path)
+
+
 def test_rrt_uses_requested_safety_distance_without_lane_constraints(rrt):
     assert rrt.safety_distance == 1.5
     assert getattr(rrt, "apply_lane_constraint", False) is False

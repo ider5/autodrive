@@ -224,7 +224,7 @@ class RRTStar:
             
             # 保存原始路径和平滑路径用于可视化
             self.raw_path = raw_path
-            self.smooth_path = smooth_path
+            self.smoothed_path = smooth_path
             
             print(f"平滑后路径节点数: {len(smooth_path)}")
             

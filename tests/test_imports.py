@@ -37,10 +37,14 @@ def test_font_support_exposes_live_package_labels():
     from autodrive import i18n
     from font_support import set_chinese_font, use_english_labels
 
-    assert callable(set_chinese_font)
-    labels = use_english_labels()
-    assert labels is i18n.labels
-    assert font_support.labels is i18n.labels
+    original_labels = i18n.labels
+    try:
+        assert callable(set_chinese_font)
+        labels = use_english_labels()
+        assert labels is i18n.labels
+        assert font_support.labels is i18n.labels
+    finally:
+        i18n.labels = original_labels
 
 
 def test_controller_shims_do_not_export_local_vehicle_models():
