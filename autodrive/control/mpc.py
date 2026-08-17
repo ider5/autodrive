@@ -156,11 +156,20 @@ class SimpleMPCController:
             
             # 1. 计算横向误差（相对于最近路径点的垂直距离）
             if nearest_idx < len(self.path) - 1:
-                lateral_error = -signed_cross_track(
-                    [vehicle.x, vehicle.y],
-                    self.path[nearest_idx],
-                    self.path[nearest_idx + 1],
+                path_start = self.path[nearest_idx]
+                path_end = self.path[nearest_idx + 1]
+                path_length = np.hypot(
+                    path_end[0] - path_start[0],
+                    path_end[1] - path_start[1],
                 )
+                if path_length > 0.01:
+                    lateral_error = -signed_cross_track(
+                        [vehicle.x, vehicle.y],
+                        path_start,
+                        path_end,
+                    )
+                else:
+                    lateral_error = 0.0
             else:
                 lateral_error = 0.0
             
