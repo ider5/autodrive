@@ -1,3 +1,4 @@
+import numpy as np
 import pytest
 import scipy.optimize as scipy_optimize
 
@@ -204,3 +205,31 @@ def test_mpc_on_path_control_does_not_call_scipy_optimize(
     controller.calculate_steering(_vehicle(), PATH, env.road_width)
 
     capsys.readouterr()
+
+
+def test_mpc_ignores_lateral_error_from_tiny_segment(capsys):
+    path = [[10.0, lane2], [10.0001, lane2]]
+    vehicle = BicycleModel(
+        x=10.0,
+        y=lane2 + 1.0,
+        yaw=np.arctan2(path[1][1] - (lane2 + 1.0), path[1][0] - 10.0),
+        v=2.0,
+        dt=0.1,
+    )
+    controller = _controller("mpc")
+    controller.set_path(path)
+
+    steering, _ = controller.calculate_steering(vehicle, path)
+
+    capsys.readouterr()
+    assert steering == pytest.approx(0.0, abs=1e-10)
+
+
+def test_stanley_degenerate_segment_has_zero_cross_track_and_yaw():
+    path = [[0.0, 0.0], [0.0, 1e-7]]
+    controller = _controller("stanley")
+    controller.set_path(path)
+
+    actual = controller._calculate_cross_track_error(_vehicle(), path[0], 0)
+
+    assert actual == (0.0, 0.0)
