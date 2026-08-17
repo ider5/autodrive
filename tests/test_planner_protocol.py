@@ -1,11 +1,11 @@
 import numpy as np
 import pytest
 
-from astar_path_planning import AStar
+from autodrive.environment import Environment
+from autodrive.planning.astar import AStar
 from autodrive.planning.protocol import PathPlanner
-from environment import Environment
-from rrt_path_planning import RRT
-from rrt_star_path_planning import RRTStar
+from autodrive.planning.rrt import RRT
+from autodrive.planning.rrt_star import RRTStar
 
 
 @pytest.fixture

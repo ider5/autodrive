@@ -1,8 +1,6 @@
-"""Smoke tests for the public CLI and compatibility imports."""
+"""Smoke tests for the public CLI and package imports."""
 
 import importlib
-
-import pytest
 
 
 def test_main_import_is_safe_and_run_session_is_public():
@@ -11,21 +9,3 @@ def test_main_import_is_safe_and_run_session_is_public():
 
     assert callable(main_module.main)
     assert callable(session_module.run_session)
-
-
-@pytest.mark.parametrize(
-    "module_name",
-    [
-        "environment",
-        "vehicle_model",
-        "font_support",
-        "rrt_path_planning",
-        "astar_path_planning",
-        "rrt_star_path_planning",
-        "pure_pursuit_controller",
-        "mpc_controller",
-        "stanley_controller",
-    ],
-)
-def test_root_compatibility_shim_imports(module_name):
-    assert importlib.import_module(module_name) is not None

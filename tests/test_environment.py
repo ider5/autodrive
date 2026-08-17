@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from environment import Environment, ObstacleVehicle
+from autodrive.environment import Environment, ObstacleVehicle
 
 
 def test_environment_default_geometry_and_lane_centers():

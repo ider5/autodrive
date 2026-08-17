@@ -1,12 +1,13 @@
+import inspect
+
 import numpy as np
 import pytest
-import scipy.optimize as scipy_optimize
 
-from environment import Environment
-from mpc_controller import MPCController
-from pure_pursuit_controller import CompatibleController
-from stanley_controller import CompatibleStanleyController
-from vehicle_model import BicycleModel
+from autodrive.control.mpc import MPCController
+from autodrive.control.pure_pursuit import CompatibleController
+from autodrive.control.stanley import CompatibleStanleyController
+from autodrive.environment import Environment
+from autodrive.vehicle import BicycleModel
 
 
 pytestmark = pytest.mark.filterwarnings(
@@ -191,13 +192,13 @@ def test_pure_pursuit_target_speed_is_set_without_cap(capsys):
     assert controller.target_speed == 4.0
 
 
-def test_mpc_on_path_control_does_not_call_scipy_optimize(
-    monkeypatch, capsys
-):
-    def fail_if_called(*args, **kwargs):
-        pytest.fail("The active MPC control path must remain geometric")
+def test_mpc_on_path_control_does_not_call_scipy_optimize(capsys):
+    import autodrive.control.mpc as mpc_module
 
-    monkeypatch.setattr(scipy_optimize, "minimize", fail_if_called)
+    source = inspect.getsource(mpc_module)
+    assert "scipy" not in source
+    assert "minimize" not in source
+
     env = Environment()
     controller = _controller("mpc")
     controller.set_path(PATH)
